@@ -44,8 +44,7 @@ type Portfolio struct {
 func (p *Portfolio) calculateFundamental() Fundamentals {
 	newFund := Fundamentals{}
 	for _, v := range p.Shares {
-		multiplier := v.AveragePrice * float32(v.Count) / p.Balance
-		log.Printf("multiplier %f ", multiplier)
+		multiplier := v.AveragePrice * float32(v.Count) / p.Balance // weight for single ticker
 		newFund.PE += multiplier * v.Fundamental.PE
 		newFund.PEG += multiplier * v.Fundamental.PEG
 		newFund.EPS += multiplier * v.Fundamental.EPS
@@ -59,34 +58,12 @@ func (p *Portfolio) calculateFundamental() Fundamentals {
 
 var globalPortfolio Portfolio
 
-// // TODO: implement it for same stock (if it's not new for the portfolio)
-// func (p Portfolio) updateFundamental(share *Share) {
-// 	// update weight
-// 	// probably could be eluminated by something like sum(old_fundamentals) * (old_balance/balance) + metric_name * new_share_balance/balance
-// 	old_balance := p.Balance - float32(share.Count)*share.AveragePrice
-// 	old_fund_mult := old_balance / p.Balance
-// 	new_fund_mult := float32(share.Count) * share.AveragePrice / p.Balance
-
-// 	// Some metrics could be less than 0. How to work around it? Could (will) not work on share deletion
-// 	p.Fundamental.PE = p.Fundamental.PE*float32(old_fund_mult) + float32(new_fund_mult)*share.Fundamental.PE
-// 	p.Fundamental.PEG = p.Fundamental.PEG*float32(old_fund_mult) + float32(new_fund_mult)*share.Fundamental.PEG
-// 	p.Fundamental.EPS = p.Fundamental.EPS*float32(old_fund_mult) + float32(new_fund_mult)*share.Fundamental.EPS
-// 	p.Fundamental.Beta = p.Fundamental.Beta*float32(old_fund_mult) + float32(new_fund_mult)*share.Fundamental.Beta
-// 	p.Fundamental.PS = p.Fundamental.PS*float32(old_fund_mult) + float32(new_fund_mult)*share.Fundamental.PS
-// 	p.Fundamental.PB = p.Fundamental.PB*float32(old_fund_mult) + float32(new_fund_mult)*share.Fundamental.PB
-// }
-
 func (p *Portfolio) updateShares(share *Share) {
 	// TODO: Provide optional date time of buying share
 	purchase := Purchase{time.Now(), share.Ticker, share.Count, share.AveragePrice}
 	p.Purchases[share.Ticker] = append(p.Purchases[share.Ticker], purchase)
-	log.Println("updating p.baalnce: %f \n", p.Balance)
-	log.Printf("share avg: %f, \n", share.AveragePrice)
-	log.Printf("share count: %d, \n", share.Count)
 	p.Balance = p.Balance + share.AveragePrice*float32(share.Count)
-	log.Printf("updated p.balance: %f \n", p.Balance)
 	p.Fundamental = p.calculateFundamental()
-	log.Printf("updated x3 p.balance: %f \n", p.Balance)
 
 }
 
@@ -96,8 +73,6 @@ func (p *Portfolio) AddShare(share *Share) {
 	if !exists {
 		p.Shares[share.Ticker] = share
 		p.updateShares(share)
-		log.Printf("updated p.balance x2: %f \n", p.Balance)
-		log.Printf("p shares: %d \n", len(p.Shares))
 
 	} else {
 		newCount := p.Shares[share.Ticker].Count + share.Count
@@ -114,7 +89,6 @@ func (p *Portfolio) AddShare(share *Share) {
 
 func (p *Portfolio) DeleteShare(share *Share) {
 	p.updateShares(share)
-
 }
 
 func MockPortfolio() Portfolio {
@@ -163,6 +137,7 @@ func MockPortfolio() Portfolio {
 }
 
 func portfolioHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Got request")
 	if r.Method == http.MethodGet {
 		bytes, err := json.Marshal(&globalPortfolio)
 		if err != nil {
@@ -175,7 +150,6 @@ func portfolioHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Can't write to response", http.StatusInternalServerError)
 			return
 		}
-
 		return
 
 	} else {
@@ -186,7 +160,7 @@ func portfolioHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	globalPortfolio = MockPortfolio()
-	log.Println("Serving at: ", 8080)
+	log.Printf("Serving at: %s:%d\n", "localhost", 8080)
 	http.HandleFunc("/portfolio", portfolioHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

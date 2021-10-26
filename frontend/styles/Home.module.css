@@ -129,6 +129,12 @@
   margin-left: 0.5rem;
 }
 
+.Portfolio {
+  margin-left: auto;
+  margin-right: auto;
+  width: 30em
+}
+
 @media (max-width: 600px) {
   .grid {
     width: 100%;
