@@ -7,6 +7,82 @@ import (
 	"time"
 )
 
+type Server struct {
+	// TODO: store in DB
+	portfolio Portfolio
+
+	mux    *http.ServeMux
+	client *APIClient
+}
+
+func NewServer(apiKey string) (*Server, error) {
+	client, err := NewClient(apiKey)
+	if err != nil {
+		return nil, err
+	}
+
+	server := &Server{
+		portfolio: MockPortfolio(),
+
+		mux:    http.NewServeMux(),
+		client: client,
+	}
+
+	server.mux.HandleFunc("/share", func(rw http.ResponseWriter, r *http.Request) {
+		// FIXME
+		rw.Header().Set("Access-Control-Allow-Origin", "*")
+		rw.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method != http.MethodGet {
+			http.Error(rw, "Invalid method", http.StatusMethodNotAllowed)
+			return
+		}
+
+		ticker := r.URL.Query().Get("ticker")
+		if ticker == "" {
+			http.Error(rw, "Invalid ticker", http.StatusBadRequest)
+			return
+		}
+
+		log.Printf("Requesting fundamentals of %v\n", ticker)
+		ratios, err := server.client.GetFundamentals(ticker)
+		if err != nil {
+			http.Error(rw, "Failed to obtain stock fundamentals", http.StatusInternalServerError)
+			log.Printf("API request error: %v\n", err)
+			return
+		}
+
+		server.sendResponse(rw, ratios)
+	})
+
+	server.mux.HandleFunc("/portfolio", func(rw http.ResponseWriter, r *http.Request) {
+		log.Println("Portfolio requested")
+		server.sendResponse(rw, server.portfolio)
+	})
+
+	return server, nil
+}
+
+func (server *Server) sendResponse(rw http.ResponseWriter, object interface{}) {
+	data, err := json.Marshal(&object)
+	if err != nil {
+		log.Println("Failed to marshal response:", err)
+		return
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	_, err = rw.Write(data)
+	if err != nil {
+		log.Println("Failed to send response:", err)
+	}
+}
+
+func (server *Server) Run(addr string) error {
+	log.Println("Listening on", addr)
+	return http.ListenAndServe(addr, server.mux)
+}
+
+// TODO: decouple share (as "in general") concept from position (as "in portfolio")
 type Share struct {
 	Ticker       string       `json:"Ticker"`
 	FullName     string       `json:"FullName"`
@@ -15,8 +91,6 @@ type Share struct {
 	Count        int          `json:"Count"` // negative for shorts
 	Fundamental  Fundamentals `json:"Fundamental"`
 }
-
-var mockShare Share = Share{"APPL", "APPLE", 142.9, 142.9, 50, Fundamentals{27.9, 1.41, 5.11, 1.22, 6.75, 36.9}}
 
 type Fundamentals struct {
 	PE   float32 `json:"PE"`
@@ -27,6 +101,7 @@ type Fundamentals struct {
 	PB   float32 `json:"PB"`
 }
 
+// TODO: rename to Position
 type Purchase struct {
 	Date         time.Time
 	Ticker       string
@@ -57,8 +132,6 @@ func (p *Portfolio) calculateFundamental() Fundamentals {
 
 	return newFund
 }
-
-var globalPortfolio Portfolio
 
 func (p *Portfolio) updateShares(share *Share) {
 	// TODO: Provide optional date time of buying share
@@ -138,66 +211,16 @@ func MockPortfolio() Portfolio {
 	return port
 }
 
-func portfolioHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Got request")
-	if r.Method == http.MethodGet {
-		bytes, err := json.Marshal(&globalPortfolio)
-		if err != nil {
-			http.Error(w, "Invalid marshaling", http.StatusInternalServerError)
-			return
-		}
-
-		_, err = w.Write(bytes)
-		if err != nil {
-			http.Error(w, "Can't write to response", http.StatusInternalServerError)
-			return
-		}
-		return
-
-	} else {
-		http.Error(w, "wrong method for portfolio", http.StatusInternalServerError)
-		return
-	}
-}
-
-func shareHandler(w http.ResponseWriter, r *http.Request) {
-
-	// todo: delete it
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	log.Println("Got request")
-	if r.Method == http.MethodGet {
-		ticker := r.URL.Query().Get("ticker")
-		if len(ticker) == 0 {
-			http.Error(w, "invalid ticker", http.StatusInternalServerError)
-			return
-		}
-		log.Printf("requested ticker is %s, but return the only one mock yolo", ticker)
-
-		bytes, err := json.Marshal(&mockShare)
-		if err != nil {
-			http.Error(w, "Invalid marshaling", http.StatusInternalServerError)
-			return
-		}
-
-		_, err = w.Write(bytes)
-		if err != nil {
-			http.Error(w, "Can't write to response", http.StatusInternalServerError)
-			return
-		}
-		return
-
-	} else {
-		http.Error(w, "wrong method for portfolio", http.StatusInternalServerError)
-		return
-	}
-}
-
 func main() {
-	globalPortfolio = MockPortfolio()
-	log.Printf("Serving at: %s:%d\n", "localhost", 8080)
-	http.HandleFunc("/portfolio", portfolioHandler)
-	http.HandleFunc("/share", shareHandler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// FIXME: unhardcode api key
+	server, err := NewServer("1bcc9d43e5eceb671cfaefb7a49ef506")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// FIXME: unhardcode addr
+	err = server.Run("127.0.0.1:8080")
+	if err != nil {
+		log.Fatal(err)
+	}
 }

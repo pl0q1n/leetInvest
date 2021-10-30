@@ -14,7 +14,7 @@ const Search = () => {
             type="text"
             id="header-search"
             placeholder="Enter ticker"
-            name="share" 
+            name="share"
         />
         <button type="submit">View</button>
     </form>
@@ -45,7 +45,7 @@ export default function StockScreener({toRender}) {
   },[query])
 
   if (data) {
-      const fundamental = data.Fundamental
+      const fundamental = data
       const fundamentals_val = Object.keys(fundamental).map((title) => <tr>{title}: {fundamental[title]}</tr>)
       const full_symbol = `NASDAQ=${query}`
       console.log(full_symbol)
@@ -61,7 +61,7 @@ export default function StockScreener({toRender}) {
         <Search/>
       </div>
     )
-    
+
   }
 
   return (
