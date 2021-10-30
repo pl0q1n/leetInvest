@@ -9,7 +9,6 @@ function Portfolio({ posts }) {
   if (posts) {
     
     const fundamentals = posts.Fundamental
-  
     const fundamentals_val = Object.keys(fundamentals).map((title) => <tr>{title}: {fundamentals[title]}</tr>)
 
 

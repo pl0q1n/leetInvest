@@ -18,7 +18,7 @@ export default function Home() {
             </a>
           </Link>
 
-          <Link href="/smth ">
+          <Link href="/stockScreener">
             <a className={styles.card}>
               <h2>Something else &rarr;</h2>
               <p>Nothing is here for now folks</p>

@@ -16,6 +16,8 @@ type Share struct {
 	Fundamental  Fundamentals `json:"Fundamental"`
 }
 
+var mockShare Share = Share{"APPL", "APPLE", 142.9, 142.9, 50, Fundamentals{27.9, 1.41, 5.11, 1.22, 6.75, 36.9}}
+
 type Fundamentals struct {
 	PE   float32 `json:"PE"`
 	PEG  float32 `json:"PEG"`
@@ -158,9 +160,44 @@ func portfolioHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func shareHandler(w http.ResponseWriter, r *http.Request) {
+
+	// todo: delete it
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	log.Println("Got request")
+	if r.Method == http.MethodGet {
+		ticker := r.URL.Query().Get("ticker")
+		if len(ticker) == 0 {
+			http.Error(w, "invalid ticker", http.StatusInternalServerError)
+			return
+		}
+		log.Printf("requested ticker is %s, but return the only one mock yolo", ticker)
+
+		bytes, err := json.Marshal(&mockShare)
+		if err != nil {
+			http.Error(w, "Invalid marshaling", http.StatusInternalServerError)
+			return
+		}
+
+		_, err = w.Write(bytes)
+		if err != nil {
+			http.Error(w, "Can't write to response", http.StatusInternalServerError)
+			return
+		}
+		return
+
+	} else {
+		http.Error(w, "wrong method for portfolio", http.StatusInternalServerError)
+		return
+	}
+}
+
 func main() {
 	globalPortfolio = MockPortfolio()
 	log.Printf("Serving at: %s:%d\n", "localhost", 8080)
 	http.HandleFunc("/portfolio", portfolioHandler)
+	http.HandleFunc("/share", shareHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
