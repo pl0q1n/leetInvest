@@ -55,6 +55,30 @@ func NewServer(apiKey string) (*Server, error) {
 		server.sendResponse(rw, ratios)
 	})
 
+	server.mux.HandleFunc("/dcf", func(rw http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(rw, "Invalid method", http.StatusMethodNotAllowed)
+			return
+		}
+
+		ticker := r.URL.Query().Get("ticker")
+		if ticker == "" {
+			http.Error(rw, "Invalid ticker", http.StatusBadRequest)
+			return
+		}
+
+		log.Printf("Requesting DCF valution of %v\n", ticker)
+		dcf, err := server.client.GetDCFValuation(ticker)
+		if err != nil {
+			// TODO: make sure ticker is valid, otherwise it is client error, not internal server error
+			http.Error(rw, "Faield to obtain DCF valuation", http.StatusInternalServerError)
+			log.Printf("API request error: %v\n", err)
+			return
+		}
+
+		server.sendResponse(rw, dcf)
+	})
+
 	server.mux.HandleFunc("/portfolio", func(rw http.ResponseWriter, r *http.Request) {
 		log.Println("Portfolio requested")
 		server.sendResponse(rw, server.portfolio)

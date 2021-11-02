@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+
 	fmp "github.com/spacecodewor/fmpcloud-go"
 	requests "github.com/spacecodewor/fmpcloud-go/objects"
 )
@@ -29,6 +31,10 @@ func (api *APIClient) GetFundamentals(ticker string) (Fundamentals, error) {
 		return Fundamentals{}, err
 	}
 
+	if len(ratios) == 0 {
+		return Fundamentals{}, errors.New("empty response")
+	}
+
 	latestRatios := ratios[0]
 	return Fundamentals{
 		PE:   float32(latestRatios.PriceEarningsRatio),
@@ -38,4 +44,26 @@ func (api *APIClient) GetFundamentals(ticker string) (Fundamentals, error) {
 		PS:   float32(latestRatios.PriceToSalesRatio),
 		PB:   float32(latestRatios.PriceToBookRatio),
 	}, nil
+}
+
+type Holder = requests.InstitutionalHolder
+
+// NOTE: only for "premium" members
+func (api *APIClient) GetInstitutionalHolders(ticker string) ([]Holder, error) {
+	return api.client.CompanyValuation.InstitutionalHolders(ticker)
+}
+
+type DCF = requests.DiscountedCashFlow
+
+func (api *APIClient) GetDCFValuation(ticker string) (DCF, error) {
+	dcf, err := api.client.CompanyValuation.DiscountedCashFlow(ticker)
+	if err != nil {
+		return DCF{}, err
+	}
+
+	if len(dcf) == 0 {
+		return DCF{}, errors.New("empty response")
+	}
+
+	return dcf[0], nil
 }
