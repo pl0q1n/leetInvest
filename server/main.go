@@ -56,6 +56,10 @@ func NewServer(apiKey string) (*Server, error) {
 	})
 
 	server.mux.HandleFunc("/dcf", func(rw http.ResponseWriter, r *http.Request) {
+		// FIXME
+		rw.Header().Set("Access-Control-Allow-Origin", "*")
+		rw.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		
 		if r.Method != http.MethodGet {
 			http.Error(rw, "Invalid method", http.StatusMethodNotAllowed)
 			return
