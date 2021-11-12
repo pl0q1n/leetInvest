@@ -1,10 +1,14 @@
 import Gauge from 'react-gaugejs';
+import { useEffect, useState } from 'react'
+
 
 export default function GaugeHandler(props) {
+    const [params, setParams] = useState(props)
+    
     console.log(props)
 
-    const diff = (props.max - props.min) / 5
-    let labels = [props.min]
+    const diff = (Math.max(params.max, params.pe) - params.min) / 5
+    let labels = [params.min]
     for (let i = 1; i < 6; i++) {
         labels.push(labels[i-1] + diff)
     }
@@ -13,9 +17,9 @@ export default function GaugeHandler(props) {
     
     return (
         <Gauge
-        value={props.pe}
-        minValue={props.min}
-        maxValue={props.max}
+        value={params.pe}
+        minValue={params.min}
+        maxValue={Math.max(params.max, params.pe)}
         animationSpeed={32}
         options={{
             angle: 0.1,
@@ -36,7 +40,7 @@ export default function GaugeHandler(props) {
             percentColors: [ [0, "#4bef0c"], [0.25, "#bcef0c" ], [0.50, "#f9c802"], [0.75, "#f94d02"], [1.0, "#ff0000"]],
             staticLabels: {
                 font: "10px sans-serif",  // Specifies font
-                labels: [0, 10, 20, 30, 40, 50],  // Print labels at these values
+                labels: labels,  // Print labels at these values
                 color: "#000000",  // Optional: Label text color
                 fractionDigits: 0  // Optional: Numerical precision. 0=round off.
               },

@@ -9,6 +9,11 @@ const GaugeComponent = dynamic(
   {ssr: false}
 );
 
+const PlotComponent = dynamic(
+  () => import('../components/plotHandler'),
+  {ssr: false}
+)
+
 
 const Search = () => {
   return (
@@ -33,7 +38,7 @@ export default function StockScreener() {
     return null
   }
   const [data, setData] = useState()
-  const [dcf, setDcf] = useState()
+  const [DCF, setDcf] = useState()
   const tvRef = useRef(null)
 
   const { search } = window.location;
@@ -72,18 +77,19 @@ export default function StockScreener() {
     }
   },[query])
 
-  useEffect(() => {
 
-  },[])
-
-
-
-  if (data) {
+  if (data && DCF) {
       const fundamental = data
       const fundamentals_val = Object.keys(fundamental).map((title) => <tr>{title}: {fundamental[title]}</tr>)
+      
       const full_symbol = `NASDAQ=${query}`
       console.log(full_symbol)
-      const gauge = <GaugeComponent pe={fundamental.PE} min={0} max={50} />; 
+      
+      const gauge = <GaugeComponent pe={fundamental.PE} min={0} max={50} />;
+      
+      const dfc_info = DCF
+      const bullet = <PlotComponent dcf={dfc_info.dcf} price={dfc_info["Stock Price"]} />;
+      
       return (
       <div className={styles.Portfolio}>
         <Search />
@@ -92,6 +98,7 @@ export default function StockScreener() {
         <div>
           PE: {fundamental.PE}
           {gauge}
+          {bullet}
         </div>
         <div  className="tradingview-widget-container" ref={tvRef}>
           <div id="tradingview_95742"></div>
