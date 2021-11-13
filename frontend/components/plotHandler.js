@@ -1,8 +1,10 @@
 import Plot from 'react-plotly.js';
 import {useState} from 'react'
 
+
 export default function PlotHandler(props) {
-    const [params, setParams] = useState(props)
+    const [showHover, setShowHover] = useState(false)
+    const params = props
     const price = params.price
     const dcf = params.dcf
     const right_border = Math.max(price, dcf*1.5)
@@ -16,6 +18,7 @@ export default function PlotHandler(props) {
 
     console.log("Damn boy check this out: %f %f", price, dcf)
     return (
+        // <div>
         <Plot
         data={[
           { 
@@ -37,9 +40,14 @@ export default function PlotHandler(props) {
           },
         ]}
 
-        layout={ {width: 400, height: 220, title: 'Fair value', hovermode: 'closest'} }
-
+        layout={ {width: 600, height: 220, title: 'Fair value'} }
+        onHover={(e) => {
+            console.log("XUI")
+            setShowHover(!showHover)
+        }}
       />
+    //   {showHover&&<div>HUI</div>}
+    //   </div>
     );
 
 }

@@ -11,7 +11,7 @@ export default function Home() {
 
         <div className={styles.grid}>
           
-          <Link href="/portfolio ">
+          <Link href="/portfolio">
             <a className={styles.card}>
               <h2>Portfolio &rarr;</h2>
               <p>Discover your personal leet porfolio</p>

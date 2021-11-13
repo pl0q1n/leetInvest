@@ -1,6 +1,16 @@
 import Link from 'next/link'
 import styles from '../styles/Home.module.css'
+import dynamic from 'next/dynamic'
 
+const PlotComponent = dynamic(
+  () => import('../components/plotHandler'),
+  {ssr: false}
+)
+
+const WaterfallComponent = dynamic(
+  () => import('../components/waterfallHandler'),
+  {ssr: false}
+)
 
 // posts will be populated at build time by getStaticProps()
 function Portfolio({ posts }) {
@@ -43,7 +53,12 @@ function Portfolio({ posts }) {
           <tr>{share_header}</tr>
           {shares}  
         </table></div>
-
+        <div>
+          <PlotComponent dcf={1200} price={1234} />
+        </div>
+        <div>
+          <WaterfallComponent />
+        </div>
       </div>
     )
 
