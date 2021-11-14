@@ -67,3 +67,22 @@ func (api *APIClient) GetDCFValuation(ticker string) (DCF, error) {
 
 	return dcf[0], nil
 }
+
+// Get income statement for last year
+func (api *APIClient) GetIncomeStatement(ticker string) (requests.IncomeStatement, error) {
+	reports, err := api.client.CompanyValuation.IncomeStatement(requests.RequestIncomeStatement{
+		Symbol: ticker,
+		Period: requests.CompanyValuationPeriodAnnual,
+		Limit:  1, // FIXME?
+	})
+
+	if err != nil {
+		return requests.IncomeStatement{}, err
+	}
+
+	if len(reports) == 0 {
+		return requests.IncomeStatement{}, errors.New("empty response")
+	}
+
+	return reports[0], nil
+}

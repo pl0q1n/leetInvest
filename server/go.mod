@@ -3,8 +3,10 @@ module leet_invest
 go 1.16
 
 require (
+	github.com/gin-contrib/cors v1.3.1
+	github.com/gin-gonic/gin v1.7.4
 	github.com/go-resty/resty/v2 v2.6.0 // indirect
-	github.com/spacecodewor/fmpcloud-go v0.0.0-20210714185845-790237ef6fed // indirect
+	github.com/spacecodewor/fmpcloud-go v0.0.0-20210714185845-790237ef6fed
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.19.1 // indirect

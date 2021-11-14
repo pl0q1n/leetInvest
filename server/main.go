@@ -1,17 +1,19 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
 	// TODO: store in DB
 	portfolio Portfolio
 
-	mux    *http.ServeMux
+	router *gin.Engine
 	client *APIClient
 }
 
@@ -21,93 +23,90 @@ func NewServer(apiKey string) (*Server, error) {
 		return nil, err
 	}
 
+	router := gin.Default()
+	router.Use(cors.Default())
+
 	server := &Server{
 		portfolio: MockPortfolio(),
 
-		mux:    http.NewServeMux(),
+		router: router,
 		client: client,
 	}
 
-	server.mux.HandleFunc("/share", func(rw http.ResponseWriter, r *http.Request) {
-		// FIXME
-		rw.Header().Set("Access-Control-Allow-Origin", "*")
-		rw.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-		if r.Method != http.MethodGet {
-			http.Error(rw, "Invalid method", http.StatusMethodNotAllowed)
-			return
-		}
-
-		ticker := r.URL.Query().Get("ticker")
+	server.router.GET("/share", func(c *gin.Context) {
+		ticker := c.Query("ticker")
 		if ticker == "" {
-			http.Error(rw, "Invalid ticker", http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status": "bad_ticker",
+			})
 			return
 		}
 
-		log.Printf("Requesting fundamentals of %v\n", ticker)
 		ratios, err := server.client.GetFundamentals(ticker)
 		if err != nil {
-			http.Error(rw, "Failed to obtain stock fundamentals", http.StatusInternalServerError)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status": "internal_error",
+			})
 			log.Printf("API request error: %v\n", err)
 			return
 		}
 
-		server.sendResponse(rw, ratios)
+		c.JSON(http.StatusOK, ratios)
 	})
 
-	server.mux.HandleFunc("/dcf", func(rw http.ResponseWriter, r *http.Request) {
-		// FIXME
-		rw.Header().Set("Access-Control-Allow-Origin", "*")
-		rw.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		
-		if r.Method != http.MethodGet {
-			http.Error(rw, "Invalid method", http.StatusMethodNotAllowed)
-			return
-		}
-
-		ticker := r.URL.Query().Get("ticker")
+	server.router.GET("/dcf", func(c *gin.Context) {
+		ticker := c.Query("ticker")
 		if ticker == "" {
-			http.Error(rw, "Invalid ticker", http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status": "bad_ticker",
+			})
 			return
 		}
 
-		log.Printf("Requesting DCF valution of %v\n", ticker)
 		dcf, err := server.client.GetDCFValuation(ticker)
 		if err != nil {
 			// TODO: make sure ticker is valid, otherwise it is client error, not internal server error
-			http.Error(rw, "Faield to obtain DCF valuation", http.StatusInternalServerError)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status": "internal_error",
+			})
 			log.Printf("API request error: %v\n", err)
 			return
 		}
 
-		server.sendResponse(rw, dcf)
+		c.JSON(http.StatusOK, dcf)
 	})
 
-	server.mux.HandleFunc("/portfolio", func(rw http.ResponseWriter, r *http.Request) {
-		log.Println("Portfolio requested")
-		server.sendResponse(rw, server.portfolio)
+	server.router.GET("/income", func(c *gin.Context) {
+		ticker := c.Query("ticker")
+		if ticker == "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status": "bad_ticker",
+			})
+			return
+		}
+
+		income, err := server.client.GetIncomeStatement(ticker)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status": "internal_error",
+			})
+			log.Printf("API request error: %v\n", err)
+			return
+		}
+
+		c.JSON(http.StatusOK, income)
+	})
+
+	server.router.GET("/portfolio", func(c *gin.Context) {
+		c.JSON(http.StatusOK, server.portfolio)
 	})
 
 	return server, nil
 }
 
-func (server *Server) sendResponse(rw http.ResponseWriter, object interface{}) {
-	data, err := json.Marshal(&object)
-	if err != nil {
-		log.Println("Failed to marshal response:", err)
-		return
-	}
-
-	rw.Header().Set("Content-Type", "application/json")
-	_, err = rw.Write(data)
-	if err != nil {
-		log.Println("Failed to send response:", err)
-	}
-}
-
 func (server *Server) Run(addr string) error {
 	log.Println("Listening on", addr)
-	return http.ListenAndServe(addr, server.mux)
+	return server.router.Run(addr)
 }
 
 // TODO: decouple share (as "in general") concept from position (as "in portfolio")
@@ -240,6 +239,8 @@ func MockPortfolio() Portfolio {
 }
 
 func main() {
+	gin.DisableConsoleColor()
+
 	// FIXME: unhardcode api key
 	server, err := NewServer("1bcc9d43e5eceb671cfaefb7a49ef506")
 	if err != nil {
