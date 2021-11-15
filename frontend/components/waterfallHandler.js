@@ -1,7 +1,8 @@
 import Plot from 'react-plotly.js';
 
 export default function WaterfallHandler(props) {
-
+    console.log("ALLLOOOO")
+    console.log(props)
     return (
         <Plot
             data={[
@@ -24,19 +25,19 @@ export default function WaterfallHandler(props) {
                         "Earnings"
                     ],
                     textposition: "outside",
-                    text: [
-                        "$176",
-                        "$-54",
-                        "$121",
-                        "$-53",
-                        "$67"
-                    ],
+                    // text: [
+                    //     "$176",
+                    //     "$-54",
+                    //     "$121",
+                    //     "$-53",
+                    //     "$67"
+                    // ],
                     y: [
-                        176,
-                        -54,
-                        121,
-                        -53,
-                        67
+                        props.revenue,
+                        -props.costOfRevenue,
+                        props.grossProfit,
+                        -props.operatingExpenses,
+                        props.netIncome
                     ],
                     connector: {
                         line: {

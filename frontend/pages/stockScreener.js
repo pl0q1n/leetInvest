@@ -14,6 +14,10 @@ const PlotComponent = dynamic(
   {ssr: false}
 )
 
+const WaterfallComponent = dynamic(
+  () => import('../components/waterfallHandler'),
+  { ssr: false }
+)
 
 const Search = () => {
   return (
@@ -39,6 +43,8 @@ export default function StockScreener() {
   }
   const [data, setData] = useState()
   const [DCF, setDcf] = useState()
+  const [income, setIncome] = useState()
+
   const tvRef = useRef(null)
 
   const { search } = window.location;
@@ -53,6 +59,10 @@ export default function StockScreener() {
       const dcf = await getDCF(query)
       console.log(dcf)
       setDcf(dcf)
+
+      const income = await getIncome(query)
+      console.log(income)
+      setIncome(income)
 
       const script = document.createElement('script');
       script.src = 'https://s3.tradingview.com/tv.js'
@@ -78,7 +88,7 @@ export default function StockScreener() {
   },[query])
 
 
-  if (data && DCF) {
+  if (data && DCF && income) {
       const fundamental = data
       const fundamentals_val = Object.keys(fundamental).map((title) => <tr>{title}: {fundamental[title]}</tr>)
       
@@ -99,6 +109,15 @@ export default function StockScreener() {
           PE: {fundamental.PE}
           {gauge}
           {bullet}
+        </div>
+        <div>
+          <WaterfallComponent 
+            revenue={income.revenue} 
+            costOfRevenue={income.costOfRevenue}
+            grossProfit={income.grossProfit}
+            operatingExpenses={income.operatingExpenses}
+            netIncome={income.netIncome}
+            />
         </div>
         <div  className="tradingview-widget-container" ref={tvRef}>
           <div id="tradingview_95742"></div>
@@ -128,6 +147,12 @@ export async function getShareInfo(ticker) {
 
 export async function getDCF(ticker) {
   const res = await fetch(`http://127.0.0.1:8080/dcf?ticker=${ticker}`)
+  const data = await res.json()
+  return data
+}
+
+export async function getIncome(ticker) {
+  const res = await fetch(`http://127.0.0.1:8080/income?ticker=${ticker}`)
   const data = await res.json()
   return data
 }
