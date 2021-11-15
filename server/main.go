@@ -201,10 +201,6 @@ func (p *Portfolio) GetBalance() float32 {
 	return balance
 }
 
-func GetRatios(ticker string) Ratios {
-	panic("unimplemented")
-}
-
 func GetAggregateRatios(p *Portfolio, client *APIClient) (Ratios, error) {
 	balance := p.GetBalance()
 	ratios := Ratios{}
