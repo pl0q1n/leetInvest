@@ -20,7 +20,7 @@ func NewClient(key string) (*APIClient, error) {
 	return &APIClient{client: client}, nil
 }
 
-func (api *APIClient) GetFundamentals(ticker string) (Fundamentals, error) {
+func (api *APIClient) GetRatios(ticker string) (Ratios, error) {
 	request := requests.RequestFinancialRatios{
 		Symbol: ticker,
 		Period: requests.CompanyValuationPeriodAnnual,
@@ -28,15 +28,15 @@ func (api *APIClient) GetFundamentals(ticker string) (Fundamentals, error) {
 	}
 	ratios, err := api.client.CompanyValuation.FinancialRatios(request)
 	if err != nil {
-		return Fundamentals{}, err
+		return Ratios{}, err
 	}
 
 	if len(ratios) == 0 {
-		return Fundamentals{}, errors.New("empty response")
+		return Ratios{}, errors.New("empty response")
 	}
 
 	latestRatios := ratios[0]
-	return Fundamentals{
+	return Ratios{
 		PE:   float32(latestRatios.PriceEarningsRatio),
 		PEG:  float32(latestRatios.PriceEarningsToGrowthRatio),
 		EPS:  0.0,
@@ -73,7 +73,7 @@ func (api *APIClient) GetIncomeStatement(ticker string) (requests.IncomeStatemen
 	reports, err := api.client.CompanyValuation.IncomeStatement(requests.RequestIncomeStatement{
 		Symbol: ticker,
 		Period: requests.CompanyValuationPeriodAnnual,
-		Limit:  1, // FIXME?
+		Limit:  1,
 	})
 
 	if err != nil {

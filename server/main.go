@@ -1,9 +1,9 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -37,15 +37,15 @@ func NewServer(apiKey string) (*Server, error) {
 		ticker := c.Query("ticker")
 		if ticker == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"status": "bad_ticker",
+				"error": "invalid ticker",
 			})
 			return
 		}
 
-		ratios, err := server.client.GetFundamentals(ticker)
+		ratios, err := server.client.GetRatios(ticker)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"status": "internal_error",
+				"error": "internal error",
 			})
 			log.Printf("API request error: %v\n", err)
 			return
@@ -58,7 +58,7 @@ func NewServer(apiKey string) (*Server, error) {
 		ticker := c.Query("ticker")
 		if ticker == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"status": "bad_ticker",
+				"error": "invalid ticker",
 			})
 			return
 		}
@@ -67,7 +67,7 @@ func NewServer(apiKey string) (*Server, error) {
 		if err != nil {
 			// TODO: make sure ticker is valid, otherwise it is client error, not internal server error
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"status": "internal_error",
+				"error": "internal error",
 			})
 			log.Printf("API request error: %v\n", err)
 			return
@@ -79,17 +79,13 @@ func NewServer(apiKey string) (*Server, error) {
 	server.router.GET("/income", func(c *gin.Context) {
 		ticker := c.Query("ticker")
 		if ticker == "" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"status": "bad_ticker",
-			})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid ticker"})
 			return
 		}
 
 		income, err := server.client.GetIncomeStatement(ticker)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"status": "internal_error",
-			})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 			log.Printf("API request error: %v\n", err)
 			return
 		}
@@ -98,10 +94,63 @@ func NewServer(apiKey string) (*Server, error) {
 	})
 
 	server.router.GET("/portfolio", func(c *gin.Context) {
-		c.JSON(http.StatusOK, server.portfolio)
+		type PortfolioResponse struct {
+			Portfolio
+			Ratios Ratios `json:"ratios"`
+		}
+
+		ratios, err := GetAggregateRatios(&server.portfolio, server.client)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			log.Printf("API request error: %v\n", err)
+			return
+		}
+
+		c.JSON(http.StatusOK, PortfolioResponse{
+			server.portfolio,
+			ratios,
+		})
+	})
+
+	server.router.POST("/portfolio", func(c *gin.Context) {
+		var edit PortfolioEdit
+		if err := c.ShouldBindJSON(&edit); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		switch edit.Type {
+		case "buy":
+			c.JSON(http.StatusNotImplemented, nil)
+		case "sell":
+			c.JSON(http.StatusNotImplemented, nil)
+		case "add":
+			// TODO: validate ticker
+			server.portfolio.AddPosition(edit.Ticker, Position{
+				Count: edit.Count,
+				Price: edit.Price,
+			})
+			c.JSON(http.StatusOK, nil)
+		case "remove":
+			err := server.portfolio.RemovePosition(edit.Ticker, edit.Count)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			} else {
+				c.JSON(http.StatusOK, nil)
+			}
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid edit type"})
+		}
 	})
 
 	return server, nil
+}
+
+type PortfolioEdit struct {
+	Type   string  `json:"type"` // buy/sell or add/remove
+	Count  uint    `json:"count"`
+	Ticker string  `json:"ticker"`
+	Price  float32 `json:"price,omitempty"`
 }
 
 func (server *Server) Run(addr string) error {
@@ -109,17 +158,7 @@ func (server *Server) Run(addr string) error {
 	return server.router.Run(addr)
 }
 
-// TODO: decouple share (as "in general") concept from position (as "in portfolio")
-type Share struct {
-	Ticker       string       `json:"Ticker"`
-	FullName     string       `json:"FullName"`
-	AveragePrice float32      `json:"AveragePrice"`
-	CurrPrice    float32      `json:"CurrPrice"`
-	Count        int          `json:"Count"` // negative for shorts
-	Fundamental  Fundamentals `json:"Fundamental"`
-}
-
-type Fundamentals struct {
+type Ratios struct {
 	PE   float32 `json:"PE"`
 	PEG  float32 `json:"PEG"`
 	EPS  float32 `json:"EPS"`
@@ -128,114 +167,115 @@ type Fundamentals struct {
 	PB   float32 `json:"PB"`
 }
 
-// TODO: rename to Position
-type Purchase struct {
-	Date         time.Time
-	Ticker       string
-	Amount       int // negative for shorts
-	AveragePrice float32
+type Position struct {
+	Price float32 `json:"price"`
+	Count uint    `json:"count"`
+}
+
+func (pos *Position) TotalPrice() float32 {
+	return pos.Price * float32(pos.Count)
+}
+
+func (left Position) Combine(right Position) Position {
+	totalCount := left.Count + right.Count
+	leftWeight := float32(left.Count) / float32(totalCount)
+	rightWeight := float32(right.Count) / float32(totalCount)
+	averagePrice := leftWeight*left.Price + rightWeight*right.Price
+
+	return Position{
+		Count: totalCount,
+		Price: averagePrice,
+	}
 }
 
 type Portfolio struct {
-	Name      string  `json:"Name"`
-	Balance   float32 `json:"Balance"`
-	Purchases map[string][]Purchase
-	// use pointer to easily change underlying share in map
-	Shares      map[string]*Share `json:"shares"`
-	Fundamental Fundamentals      `json:"Fundamental"`
+	Name      string              `json:"name"`
+	Positions map[string]Position `json:"positions"`
 }
 
-func (p *Portfolio) calculateFundamental() Fundamentals {
-	newFund := Fundamentals{}
-	for _, v := range p.Shares {
-		multiplier := v.AveragePrice * float32(v.Count) / p.Balance // weight for single ticker
-		newFund.PE += multiplier * v.Fundamental.PE
-		newFund.PEG += multiplier * v.Fundamental.PEG
-		newFund.EPS += multiplier * v.Fundamental.EPS
-		newFund.Beta += multiplier * v.Fundamental.Beta
-		newFund.PS += multiplier * v.Fundamental.PS
-		newFund.PB += multiplier * v.Fundamental.PB
+func (p *Portfolio) GetBalance() float32 {
+	balance := float32(0.0)
+	for _, position := range p.Positions {
+		balance += position.Price * float32(position.Count)
+	}
+	return balance
+}
+
+func GetRatios(ticker string) Ratios {
+	panic("unimplemented")
+}
+
+func GetAggregateRatios(p *Portfolio, client *APIClient) (Ratios, error) {
+	balance := p.GetBalance()
+	ratios := Ratios{}
+	for ticker, position := range p.Positions {
+		shareRatios, err := client.GetRatios(ticker)
+		if err != nil {
+			return Ratios{}, err
+		}
+
+		posWeight := position.TotalPrice() / balance
+
+		ratios.PE += posWeight * shareRatios.PE
+		ratios.PEG += posWeight * shareRatios.PEG
+		ratios.EPS += posWeight * shareRatios.EPS
+		ratios.Beta += posWeight * shareRatios.Beta
+		ratios.PS += posWeight * shareRatios.PS
+		ratios.PB += posWeight * shareRatios.PB
 	}
 
-	return newFund
+	return ratios, nil
 }
 
-func (p *Portfolio) updateShares(share *Share) {
-	// TODO: Provide optional date time of buying share
-	purchase := Purchase{time.Now(), share.Ticker, share.Count, share.AveragePrice}
-	p.Purchases[share.Ticker] = append(p.Purchases[share.Ticker], purchase)
-	p.Balance = p.Balance + share.AveragePrice*float32(share.Count)
-	p.Fundamental = p.calculateFundamental()
-
+func NewPortfolio(name string) Portfolio {
+	return Portfolio{
+		Name:      name,
+		Positions: make(map[string]Position),
+	}
 }
 
-// Both for buys and sells
-func (p *Portfolio) AddShare(share *Share) {
-	_, exists := p.Shares[share.Ticker]
-	if !exists {
-		p.Shares[share.Ticker] = share
-		p.updateShares(share)
-
-	} else {
-		newCount := p.Shares[share.Ticker].Count + share.Count
-		oldMult := float32(p.Shares[share.Ticker].Count) / float32(newCount)
-		newMult := float32(share.Count) / float32(newCount)
-		p.Shares[share.Ticker].AveragePrice = p.Shares[share.Ticker].AveragePrice*oldMult + share.AveragePrice*newMult
-		p.Shares[share.Ticker].CurrPrice = share.CurrPrice
-		p.Shares[share.Ticker].Count = newCount
-		// TODO: check it for real
-		p.updateShares(share)
+func (p *Portfolio) AddPosition(ticker string, position Position) {
+	if currentPosition, exists := p.Positions[ticker]; exists {
+		position = currentPosition.Combine(position)
 	}
 
+	p.Positions[ticker] = position
 }
 
-func (p *Portfolio) DeleteShare(share *Share) {
-	p.updateShares(share)
+func (p *Portfolio) RemovePosition(ticker string, count uint) error {
+	if currentPosition, exists := p.Positions[ticker]; exists {
+		if count > currentPosition.Count {
+			return errors.New("Attempt to remove more shares than available")
+		}
+
+		if count == currentPosition.Count {
+			delete(p.Positions, ticker)
+			return nil
+		}
+
+		p.Positions[ticker] = Position{
+			Price: currentPosition.Price,
+			Count: currentPosition.Count - count,
+		}
+		return nil
+	}
+
+	return errors.New("Attempt to remove position you don't have")
 }
 
 func MockPortfolio() Portfolio {
-	port := Portfolio{}
-	port.Name = "Mock"
-	port.Shares = make(map[string]*Share)
-	port.Purchases = make(map[string][]Purchase)
+	portfolio := NewPortfolio("Mock")
+	portfolio.AddPosition("AAPL", Position{
+		Price: 142.9,
+		Count: 50,
+	})
 
-	{
-		share := Share{}
+	portfolio.AddPosition("AMZN", Position{
+		Price: 3288,
+		Count: 5,
+	})
 
-		// apple on 9 oct 2021
-		share.AveragePrice = 142.9
-		share.Count = 50
-		share.CurrPrice = 142.9
-		share.FullName = "APPLE"
-		share.Ticker = "AAPL"
-		share.Fundamental.EPS = 5.11
-		share.Fundamental.PB = 36.9
-		share.Fundamental.PE = 27.9
-		share.Fundamental.PEG = 1.41
-		share.Fundamental.PS = 6.75
-		share.Fundamental.Beta = 1.22
-		port.AddShare(&share)
-	}
-
-	{
-		share := Share{}
-		// amzn on 9 oct 2021
-		share.AveragePrice = 3288
-		share.Count = 5
-		share.CurrPrice = 3288
-		share.FullName = "AMAZON"
-		share.Ticker = "AMZN"
-		share.Fundamental.EPS = 57.38
-		share.Fundamental.PB = 14.47
-		share.Fundamental.PE = 57.31
-		share.Fundamental.PEG = 1.60
-		share.Fundamental.PS = 3.76
-		share.Fundamental.Beta = 1.16
-
-		port.AddShare(&share)
-	}
-
-	return port
+	return portfolio
 }
 
 func main() {

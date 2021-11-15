@@ -4,67 +4,60 @@ import dynamic from 'next/dynamic'
 
 const PlotComponent = dynamic(
   () => import('../components/plotHandler'),
-  {ssr: false}
+  { ssr: false }
 )
 
 const WaterfallComponent = dynamic(
   () => import('../components/waterfallHandler'),
-  {ssr: false}
+  { ssr: false }
 )
 
 // posts will be populated at build time by getStaticProps()
 function Portfolio({ posts }) {
   console.log(posts)
 
-  if (posts) {
-    
-    const fundamentals = posts.Fundamental
-    const fundamentals_val = Object.keys(fundamentals).map((title) => <tr>{title}: {fundamentals[title]}</tr>)
-
-
-    // looks ugly as fuck
-    const share_header = Object.keys(posts.shares[Object.keys(posts.shares)[0]]).map((what) => 
-      {
-        if (what != "Fundamental") {
-          return <td>{what}</td>
-        }
-      }
-    )
-
-    const shares = Object.keys(posts.shares).map((share) => 
-      <tr>
-      <td>{posts.shares[share].Ticker}</td>
-      <td>{posts.shares[share].FullName}</td>
-      <td>{posts.shares[share].AveragePrice}</td>
-      <td>{posts.shares[share].CurrPrice}</td>
-      <td>{posts.shares[share].Count}</td>
-      </tr>
-      )  
-    
-
-    return (
-      <div className={styles.Portfolio}>
-        <h1>Portfolio: {posts.Name}</h1>
-        <h1>Total balance: {posts.Balance}$</h1>
-        <h2>Fundamental of portfolio:</h2>
-        <div>{fundamentals_val}</div>
-        <h2>Shares:</h2>
-        <div><table cellspacing="2" border="1" cellPadding="5" width="600">
-          <tr>{share_header}</tr>
-          {shares}  
-        </table></div>
-        <div>
-          <PlotComponent dcf={1200} price={1234} />
-        </div>
-        <div>
-          <WaterfallComponent />
-        </div>
-      </div>
-    )
-
+  if (!posts) {
+    console.log("you fucked up")
+    return
   }
-  console.log("naf to see")
 
+  const ratios = posts.ratios
+  const ratiosValues = Object.keys(ratios).map((title) => <tr>{title}: {ratios[title]}</tr>)
+
+  const firstPosition = posts.positions[Object.keys(posts.positions)[0]]
+  const header = Object.keys(firstPosition).map((key) => <td>{key}</td>)
+
+  const positions = Object.keys(posts.positions).map((ticker) =>
+    <tr>
+      <td>{ticker}</td>
+      <td>{posts.positions[ticker].price}</td>
+      <td>{posts.positions[ticker].count}</td>
+    </tr>
+  )
+
+  const addToBalance = (b, position) => b + position.price * position.count
+  const balance = Object.values(posts.positions).reduce(addToBalance, 0)
+  return (
+    <div className={styles.Portfolio}>
+      <h1>Portfolio: {posts.name}</h1>
+      <h1>Total balance: {balance}$</h1>
+      <h2>Fundamental of portfolio:</h2>
+      <div>{ratiosValues}</div>
+      <h2>Shares:</h2>
+      <div>
+        <table cellspacing="2" border="1" cellPadding="5" width="600">
+          <tr>{header}</tr>
+          {positions}
+        </table>
+      </div>
+      <div>
+        <PlotComponent dcf={1200} price={1234} />
+      </div>
+      <div>
+        <WaterfallComponent />
+      </div>
+    </div>
+  )
 }
 
 // This function gets called at build time on server-side.
