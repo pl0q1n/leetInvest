@@ -7,11 +7,6 @@ const PlotComponent = dynamic(
   { ssr: false }
 )
 
-const WaterfallComponent = dynamic(
-  () => import('../components/waterfallHandler'),
-  { ssr: false }
-)
-
 // posts will be populated at build time by getStaticProps()
 function Portfolio({ posts }) {
   console.log(posts)
@@ -52,9 +47,6 @@ function Portfolio({ posts }) {
       </div>
       <div>
         <PlotComponent dcf={1200} price={1234} />
-      </div>
-      <div>
-        <WaterfallComponent />
       </div>
     </div>
   )

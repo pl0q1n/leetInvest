@@ -61,6 +61,7 @@ export default function StockScreener() {
       setDcf(dcf)
 
       const income = await getIncome(query)
+      console.log("income")
       console.log(income)
       setIncome(income)
 
@@ -112,11 +113,7 @@ export default function StockScreener() {
         </div>
         <div>
           <WaterfallComponent 
-            revenue={income.revenue} 
-            costOfRevenue={income.costOfRevenue}
-            grossProfit={income.grossProfit}
-            operatingExpenses={income.operatingExpenses}
-            netIncome={income.netIncome}
+            income={income}
             />
         </div>
         <div  className="tradingview-widget-container" ref={tvRef}>
@@ -152,7 +149,7 @@ export async function getDCF(ticker) {
 }
 
 export async function getIncome(ticker) {
-  const res = await fetch(`http://127.0.0.1:8080/income?ticker=${ticker}`)
+  const res = await fetch(`http://127.0.0.1:8080/income?ticker=${ticker}&limit=3`)
   const data = await res.json()
   return data
 }

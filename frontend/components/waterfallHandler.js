@@ -1,53 +1,57 @@
 import Plot from 'react-plotly.js';
 
+// TODO: Split into renderer and income processing
+function WaterfallTemplate(statement, year) {
+    const template = {
+        name: year,
+        type: "waterfall",
+        orientation: "v",
+        measure: [
+            "relative",
+            "relative",
+            "total",
+            "relative",
+            "total"
+        ],
+        x: [
+            "Revenue",
+            "Cost of Revenue",
+            "Gross Profit",
+            "Expenses",
+            "Earnings"
+        ],
+        textposition: "outside",
+        y: [
+            statement.revenue,
+            -statement.costOfRevenue,
+            statement.grossProfit,
+            -statement.operatingExpenses,
+            statement.netIncome
+        ],
+        connector: {
+            line: {
+                color: "rgb(63, 63, 63)"
+            }
+        },
+    }
+
+    return template
+}
+
 export default function WaterfallHandler(props) {
     console.log("ALLLOOOO")
     console.log(props)
+    
+    const waterfalls = props.income.map(inc => {
+        const date = inc.date.substring(0,4)
+        return WaterfallTemplate(inc, date)
+    })
+
+
+    const obj = WaterfallTemplate(props.income, 2022)
     return (
         <Plot
-            data={[
-                {
-                    name: "2022",
-                    type: "waterfall",
-                    orientation: "v",
-                    measure: [
-                        "relative",
-                        "relative",
-                        "total",
-                        "relative",
-                        "total"
-                    ],
-                    x: [
-                        "Revenue",
-                        "Cost of Revenue",
-                        "Gross Profit",
-                        "Expenses",
-                        "Earnings"
-                    ],
-                    textposition: "outside",
-                    // text: [
-                    //     "$176",
-                    //     "$-54",
-                    //     "$121",
-                    //     "$-53",
-                    //     "$67"
-                    // ],
-                    y: [
-                        props.revenue,
-                        -props.costOfRevenue,
-                        props.grossProfit,
-                        -props.operatingExpenses,
-                        props.netIncome
-                    ],
-                    connector: {
-                        line: {
-                            color: "rgb(63, 63, 63)"
-                        }
-                    },
-                },
-                
-            ]}
-
+            data={waterfalls}
             layout={{
                 title: {
                     text: "Profit and loss statement"

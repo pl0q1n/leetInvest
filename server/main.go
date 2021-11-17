@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -83,7 +84,18 @@ func NewServer(apiKey string) (*Server, error) {
 			return
 		}
 
-		income, err := server.client.GetIncomeStatement(ticker)
+		rawLimit := c.Query("limit")
+		if rawLimit == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
+			return
+		}
+		limit, err := strconv.Atoi(rawLimit)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
+			return
+		}
+
+		income, err := server.client.GetIncomeStatement(ticker, limit)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 			log.Printf("API request error: %v\n", err)
