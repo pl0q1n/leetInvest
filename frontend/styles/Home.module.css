@@ -135,6 +135,10 @@
   width: 30em
 }
 
+.label {
+  white-space: pre-wrap;
+}
+
 @media (max-width: 600px) {
   .grid {
     width: 100%;

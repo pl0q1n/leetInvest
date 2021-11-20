@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import styles from '../styles/Home.module.css'
 import dynamic from 'next/dynamic'
+import { useState } from 'react'
 
 const PlotComponent = dynamic(
   () => import('../components/plotHandler'),
@@ -9,6 +10,8 @@ const PlotComponent = dynamic(
 
 // posts will be populated at build time by getStaticProps()
 function Portfolio({ posts }) {
+  const [update, setUpdate] = useState({type: "add"})
+  
   console.log(posts)
 
   if (!posts) {
@@ -29,6 +32,61 @@ function Portfolio({ posts }) {
       <td>{posts.positions[ticker].count}</td>
     </tr>
   )
+  const portfolioChanger = (
+    <form onSubmit={(event)=>{
+      console.log("sent update for portfolio: ", update)
+      SendPortfolioUpdate(update)
+      event.preventDefault();
+    }}>
+      <div>
+        <label>
+          ActionType: 
+          <select onChange={(event)=>{
+            setUpdate(prevState => ({...prevState, type: event.target.value}))
+              }
+            }>
+            <option value="add">Add</option>
+            <option value="remove">Remove</option>
+          </select>
+        </label>
+      </div>
+      <div>
+        <label>
+          Price: 
+          <input
+            name="price"            
+            type="number"
+            onChange={(event)=>{
+              setUpdate(prevState => ({...prevState, price: parseInt(event.target.value)}))
+                }
+            }/>
+        </label>
+      </div>
+      <div>
+        <label>
+          Count: 
+          <input
+            name="Count"
+            type="number"
+            onChange={(event)=>{
+              setUpdate(prevState => ({...prevState, count: parseInt(event.target.value)}))
+                }} />
+        </label>
+      </div>
+      <div>
+        <label>
+          Ticker: 
+          <input
+            name="Ticker"
+            type="text"
+            onChange={(event)=>{
+              setUpdate(prevState => ({...prevState, ticker: event.target.value}))
+                }} />
+        </label>
+      </div>
+        <input type="submit" value="Submit" />
+      </form>
+  )
 
   const addToBalance = (b, position) => b + position.price * position.count
   const balance = Object.values(posts.positions).reduce(addToBalance, 0)
@@ -48,8 +106,23 @@ function Portfolio({ posts }) {
       <div>
         <PlotComponent dcf={1200} price={1234} />
       </div>
+      <div>
+      {portfolioChanger}
+      </div>
     </div>
   )
+}
+
+
+export async function SendPortfolioUpdate(body) {
+  const requestOptions = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+    };
+  const resp = await fetch('http://127.0.0.1:8080/portfolio', requestOptions)
+
+  console.log("respo for update: ", resp)
 }
 
 // This function gets called at build time on server-side.

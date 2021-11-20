@@ -125,11 +125,14 @@ func NewServer(apiKey string) (*Server, error) {
 	})
 
 	server.router.POST("/portfolio", func(c *gin.Context) {
+		log.Printf("Portfolio post got")
 		var edit PortfolioEdit
 		if err := c.ShouldBindJSON(&edit); err != nil {
+			log.Printf("not parsed\n %s", err.Error())
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		log.Printf("parsed")
 
 		switch edit.Type {
 		case "buy":
