@@ -2,8 +2,10 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gin-contrib/cors"
@@ -289,17 +291,46 @@ func MockPortfolio() Portfolio {
 	return portfolio
 }
 
+type Config struct {
+	APIKey string
+	Host   string
+	Port   string
+}
+
+func GetConfig() (Config, error) {
+	APIKey := os.Getenv("APIKEY")
+	if APIKey == "" {
+		return Config{}, errors.New("Provide APIKEY environment variable")
+	}
+
+	host := os.Getenv("HOST")
+	if host == "" {
+		host = "127.0.0.1"
+	}
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	return Config{APIKey, host, port}, nil
+}
+
 func main() {
 	gin.DisableConsoleColor()
 
-	// FIXME: unhardcode api key
-	server, err := NewServer("1bcc9d43e5eceb671cfaefb7a49ef506")
+	config, err := GetConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// FIXME: unhardcode addr
-	err = server.Run("0.0.0.0:8080")
+	server, err := NewServer(config.APIKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	addr := fmt.Sprintf("%v:%v", config.Host, config.Port)
+	err = server.Run(addr)
 	if err != nil {
 		log.Fatal(err)
 	}
