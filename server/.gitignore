@@ -1,0 +1,6 @@
+# lock file
+go.sum
+
+# binaries
+leet_invest
+leet_invest.exe
