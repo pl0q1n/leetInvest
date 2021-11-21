@@ -11,7 +11,7 @@ const PlotComponent = dynamic(
 // posts will be populated at build time by getStaticProps()
 function Portfolio({ posts }) {
   const [update, setUpdate] = useState({type: "add"})
-  
+
   console.log(posts)
 
   if (!posts) {
@@ -23,7 +23,8 @@ function Portfolio({ posts }) {
   const ratiosValues = Object.keys(ratios).map((title) => <tr>{title}: {ratios[title]}</tr>)
 
   const firstPosition = posts.positions[Object.keys(posts.positions)[0]]
-  const header = Object.keys(firstPosition).map((key) => <td>{key}</td>)
+  const valuesHeader = Object.keys(firstPosition).map((key) => <td>{key}</td>)
+  const header = [<td>ticker</td>].concat(valuesHeader)
 
   const positions = Object.keys(posts.positions).map((ticker) =>
     <tr>
@@ -40,7 +41,7 @@ function Portfolio({ posts }) {
     }}>
       <div>
         <label>
-          ActionType: 
+          ActionType:
           <select onChange={(event)=>{
             setUpdate(prevState => ({...prevState, type: event.target.value}))
               }
@@ -52,9 +53,9 @@ function Portfolio({ posts }) {
       </div>
       <div>
         <label>
-          Price: 
+          Price:
           <input
-            name="price"            
+            name="price"
             type="number"
             onChange={(event)=>{
               setUpdate(prevState => ({...prevState, price: parseInt(event.target.value)}))
@@ -64,7 +65,7 @@ function Portfolio({ posts }) {
       </div>
       <div>
         <label>
-          Count: 
+          Count:
           <input
             name="Count"
             type="number"
@@ -75,7 +76,7 @@ function Portfolio({ posts }) {
       </div>
       <div>
         <label>
-          Ticker: 
+          Ticker:
           <input
             name="Ticker"
             type="text"
