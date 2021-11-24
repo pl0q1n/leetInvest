@@ -37,12 +37,10 @@ func (api *APIClient) GetRatios(ticker string) (Ratios, error) {
 
 	latestRatios := ratios[0]
 	return Ratios{
-		PE:   float32(latestRatios.PriceEarningsRatio),
-		PEG:  float32(latestRatios.PriceEarningsToGrowthRatio),
-		EPS:  0.0,
-		Beta: 0.0,
-		PS:   float32(latestRatios.PriceToSalesRatio),
-		PB:   float32(latestRatios.PriceToBookRatio),
+		PE:  float32(latestRatios.PriceEarningsRatio),
+		PEG: float32(latestRatios.PriceEarningsToGrowthRatio),
+		PS:  float32(latestRatios.PriceToSalesRatio),
+		PB:  float32(latestRatios.PriceToBookRatio),
 	}, nil
 }
 

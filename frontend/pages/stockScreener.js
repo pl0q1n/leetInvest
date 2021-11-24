@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { useEffect, useState, useRef } from 'react'
 import React from "react"
@@ -54,11 +53,11 @@ export default function StockScreener() {
     if (query) {
       const response = await getShareInfo(query)
       console.log(response)
-      setData(response)
+      setData(response[0])
 
       const dcf = await getDCF(query)
       console.log(dcf)
-      setDcf(dcf)
+      setDcf(dcf[0])
 
       const income = await getIncome(query)
       console.log("income")
@@ -90,29 +89,22 @@ export default function StockScreener() {
 
 
   if (data && DCF && income) {
-      const fundamental = data
-      const fundamentals_val = Object.keys(fundamental).map((title) => <tr>{title}: {fundamental[title]}</tr>)
-      
-      const full_symbol = `NASDAQ=${query}`
-      console.log(full_symbol)
-      
-      const gauge = <GaugeComponent pe={fundamental.PE} min={0} max={50} />;
-      
-      const dfc_info = DCF
-      const bullet = <PlotComponent dcf={dfc_info.dcf} price={dfc_info["Stock Price"]} />;
-      
+      const ratios = Object.keys(data).map((title) => <tr>{title}: {data[title]}</tr>)
+      const gauge = <GaugeComponent pe={data.priceEarningsRatio} min={0} max={50} />;
+      const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
+
       return (
       <div className={styles.Portfolio}>
         <Search />
-        <div>{fundamentals_val}</div>
+        <div>{ratios}</div>
         <br></br>
         <div>
-          PE: {fundamental.PE}
+          PE: {data.PriceEarningsRatio}
           {gauge}
           {bullet}
         </div>
         <div>
-          <WaterfallComponent 
+          <WaterfallComponent
             income={income}
             />
         </div>
@@ -127,29 +119,45 @@ export default function StockScreener() {
       <div className={styles.Portfolio}>
         <Search />
       </div>
-      
+
     )
 
   }
 
 }
 
+function getAPIUrl(path) {
+  const useLocalAPI = true
+  if (useLocalAPI) {
+    return `http://localhost:80/finapi/v3${path}`
+  }
+
+  const accessToken = '1bcc9d43e5eceb671cfaefb7a49ef506'
+  const url = `https://financialmodelingprep.com/api/v3${path}`
+  if (path.indexOf('?') != -1) {
+    return `${url}&apikey=${accessToken}`
+  } else {
+    return `${url}?apikey=${accessToken}`
+  }
+}
+
+
 export async function getShareInfo(ticker) {
   // Call an external API endpoint to get posts.
   // You can use any data fetching library
-  const res = await fetch(`http://127.0.0.1:8080/share?ticker=${ticker}`)
+  const res = await fetch(getAPIUrl(`/ratios/${ticker}`))
   const data = await res.json()
   return data
 }
 
 export async function getDCF(ticker) {
-  const res = await fetch(`http://127.0.0.1:8080/dcf?ticker=${ticker}`)
+  const res = await fetch(getAPIUrl(`/discounted-cash-flow/${ticker}`))
   const data = await res.json()
   return data
 }
 
 export async function getIncome(ticker) {
-  const res = await fetch(`http://127.0.0.1:8080/income?ticker=${ticker}&limit=3`)
+  const res = await fetch(getAPIUrl(`/income-statement/${ticker}`))
   const data = await res.json()
   return data
 }

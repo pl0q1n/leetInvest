@@ -176,12 +176,10 @@ func (server *Server) Run(addr string) error {
 }
 
 type Ratios struct {
-	PE   float32 `json:"PE"`
-	PEG  float32 `json:"PEG"`
-	EPS  float32 `json:"EPS"`
-	Beta float32 `json:"Beta"`
-	PS   float32 `json:"PS"`
-	PB   float32 `json:"PB"`
+	PE  float32 `json:"PE"`
+	PEG float32 `json:"PEG"`
+	PS  float32 `json:"PS"`
+	PB  float32 `json:"PB"`
 }
 
 type Position struct {
@@ -213,7 +211,7 @@ type Portfolio struct {
 func (p *Portfolio) GetBalance() float32 {
 	balance := float32(0.0)
 	for _, position := range p.Positions {
-		balance += position.Price * float32(position.Count)
+		balance += position.TotalPrice()
 	}
 	return balance
 }
@@ -231,8 +229,6 @@ func GetAggregateRatios(p *Portfolio, client *APIClient) (Ratios, error) {
 
 		ratios.PE += posWeight * shareRatios.PE
 		ratios.PEG += posWeight * shareRatios.PEG
-		ratios.EPS += posWeight * shareRatios.EPS
-		ratios.Beta += posWeight * shareRatios.Beta
 		ratios.PS += posWeight * shareRatios.PS
 		ratios.PB += posWeight * shareRatios.PB
 	}
@@ -256,24 +252,25 @@ func (p *Portfolio) AddPosition(ticker string, position Position) {
 }
 
 func (p *Portfolio) RemovePosition(ticker string, count uint) error {
-	if currentPosition, exists := p.Positions[ticker]; exists {
-		if count > currentPosition.Count {
-			return errors.New("Attempt to remove more shares than available")
-		}
+	currentPosition, exists := p.Positions[ticker]
+	if !exists {
+		return errors.New("Attempt to remove position you don't have")
+	}
 
-		if count == currentPosition.Count {
-			delete(p.Positions, ticker)
-			return nil
-		}
+	if count > currentPosition.Count {
+		return errors.New("Attempt to remove more shares than available")
+	}
 
-		p.Positions[ticker] = Position{
-			Price: currentPosition.Price,
-			Count: currentPosition.Count - count,
-		}
+	if count == currentPosition.Count {
+		delete(p.Positions, ticker)
 		return nil
 	}
 
-	return errors.New("Attempt to remove position you don't have")
+	p.Positions[ticker] = Position{
+		Price: currentPosition.Price,
+		Count: currentPosition.Count - count,
+	}
+	return nil
 }
 
 func MockPortfolio() Portfolio {
