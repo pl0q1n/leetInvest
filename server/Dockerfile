@@ -9,6 +9,7 @@ FROM alpine:latest
 COPY --from=builder /app/leet_invest ./
 RUN chmod +x ./leet_invest
 EXPOSE 8080
+ENV APIURL https://financialmodelingprep.com/api/%s
 ENV APIKEY 1bcc9d43e5eceb671cfaefb7a49ef506
 ENV PORT 8080
 ENV HOST 0.0.0.0
