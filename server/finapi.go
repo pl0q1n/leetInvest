@@ -11,8 +11,8 @@ type APIClient struct {
 	client *fmp.APIClient
 }
 
-func NewClient(key string) (*APIClient, error) {
-	client, err := fmp.NewAPIClient(fmp.Config{APIKey: key})
+func NewClient(url string, key string) (*APIClient, error) {
+	client, err := fmp.NewAPIClient(fmp.Config{APIUrl: fmp.APIUrl(url), APIKey: key})
 	if err != nil {
 		return nil, err
 	}

@@ -20,8 +20,8 @@ type Server struct {
 	client *APIClient
 }
 
-func NewServer(apiKey string) (*Server, error) {
-	client, err := NewClient(apiKey)
+func NewServer(apiUrl string, apiKey string) (*Server, error) {
+	client, err := NewClient(apiUrl, apiKey)
 	if err != nil {
 		return nil, err
 	}
@@ -289,12 +289,18 @@ func MockPortfolio() Portfolio {
 }
 
 type Config struct {
+	APIUrl string
 	APIKey string
 	Host   string
 	Port   string
 }
 
 func GetConfig() (Config, error) {
+	APIUrl := os.Getenv("APIURL")
+	if APIUrl == "" {
+		APIUrl = "http://localhost:80/finapi/%s"
+	}
+
 	APIKey := os.Getenv("APIKEY")
 	if APIKey == "" {
 		return Config{}, errors.New("Provide APIKEY environment variable")
@@ -310,7 +316,7 @@ func GetConfig() (Config, error) {
 		port = "8080"
 	}
 
-	return Config{APIKey, host, port}, nil
+	return Config{APIUrl, APIKey, host, port}, nil
 }
 
 func main() {
@@ -321,7 +327,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server, err := NewServer(config.APIKey)
+	server, err := NewServer(config.APIUrl, config.APIKey)
 	if err != nil {
 		log.Fatal(err)
 	}
