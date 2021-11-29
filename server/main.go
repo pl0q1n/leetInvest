@@ -20,6 +20,10 @@ type Server struct {
 	client *APIClient
 }
 
+type Ticker = string
+type Price = float32
+type PricesMap = map[Ticker]Price
+
 func NewServer(apiUrl string, apiKey string) (*Server, error) {
 	client, err := NewClient(apiUrl, apiKey)
 	if err != nil {
@@ -110,15 +114,8 @@ func NewServer(apiUrl string, apiKey string) (*Server, error) {
 	server.router.GET("/portfolio", func(c *gin.Context) {
 		type PortfolioResponse struct {
 			Portfolio
-			Prices map[string]float32 `json:"prices"`
-			Ratios Ratios             `json:"ratios"`
-		}
-
-		ratios, err := GetAggregateRatios(&server.portfolio, server.client)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
-			log.Printf("API request error: %v\n", err)
-			return
+			Prices PricesMap `json:"prices"`
+			Ratios Ratios    `json:"ratios"`
 		}
 
 		prices, err := GetCurrentPrices(&server.portfolio, server.client)
@@ -128,10 +125,18 @@ func NewServer(apiUrl string, apiKey string) (*Server, error) {
 			return
 		}
 
+		totalPrice := server.portfolio.TotalCurrentPrice(prices)
+		currentRatios, err := GetAggregateRatios(&server.portfolio, server.client, totalPrice)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			log.Printf("API request error: %v\n", err)
+			return
+		}
+
 		c.JSON(http.StatusOK, PortfolioResponse{
 			server.portfolio,
 			prices,
-			ratios,
+			currentRatios,
 		})
 	})
 
@@ -173,10 +178,10 @@ func NewServer(apiUrl string, apiKey string) (*Server, error) {
 }
 
 type PortfolioEdit struct {
-	Type   string  `json:"type"` // buy/sell or add/remove
-	Count  uint    `json:"count"`
-	Ticker string  `json:"ticker"`
-	Price  float32 `json:"price,omitempty"`
+	Type   string `json:"type"` // buy/sell or add/remove
+	Count  uint   `json:"count"`
+	Ticker Ticker `json:"ticker"`
+	Price  Price  `json:"price,omitempty"`
 }
 
 func (server *Server) Run(addr string) error {
@@ -192,11 +197,11 @@ type Ratios struct {
 }
 
 type Position struct {
-	Price float32 `json:"price"`
-	Count uint    `json:"count"`
+	Price Price `json:"price"`
+	Count uint  `json:"count"`
 }
 
-func (pos *Position) TotalPrice() float32 {
+func (pos *Position) TotalPrice() Price {
 	return pos.Price * float32(pos.Count)
 }
 
@@ -214,20 +219,27 @@ func (left Position) Combine(right Position) Position {
 
 type Portfolio struct {
 	Name      string              `json:"name"`
-	Positions map[string]Position `json:"positions"`
+	Positions map[Ticker]Position `json:"positions"`
 }
 
-func (p *Portfolio) GetBalance() float32 {
-	balance := float32(0.0)
+func (p *Portfolio) TotalCostBasis() Price {
+	balance := Price(0.0)
 	for _, position := range p.Positions {
 		balance += position.TotalPrice()
 	}
 	return balance
 }
 
-func GetCurrentPrices(p *Portfolio, client *APIClient) (map[string]float32, error) {
-	prices := make(map[string]float32)
+func (p *Portfolio) TotalCurrentPrice(prices PricesMap) Price {
+	balance := Price(0.0)
+	for ticker, position := range p.Positions {
+		balance += prices[ticker] * float32(position.Count)
+	}
+	return balance
+}
 
+func GetCurrentPrices(p *Portfolio, client *APIClient) (PricesMap, error) {
+	prices := make(PricesMap)
 	for ticker := range p.Positions {
 		if _, exist := prices[ticker]; exist {
 			continue
@@ -244,8 +256,7 @@ func GetCurrentPrices(p *Portfolio, client *APIClient) (map[string]float32, erro
 	return prices, nil
 }
 
-func GetAggregateRatios(p *Portfolio, client *APIClient) (Ratios, error) {
-	balance := p.GetBalance()
+func GetAggregateRatios(p *Portfolio, client *APIClient, totalPrice Price) (Ratios, error) {
 	ratios := Ratios{}
 	for ticker, position := range p.Positions {
 		shareRatios, err := client.GetRatios(ticker)
@@ -253,7 +264,7 @@ func GetAggregateRatios(p *Portfolio, client *APIClient) (Ratios, error) {
 			return Ratios{}, err
 		}
 
-		posWeight := position.TotalPrice() / balance
+		posWeight := position.TotalPrice() / totalPrice
 
 		ratios.PE += posWeight * shareRatios.PE
 		ratios.PEG += posWeight * shareRatios.PEG
@@ -267,11 +278,11 @@ func GetAggregateRatios(p *Portfolio, client *APIClient) (Ratios, error) {
 func NewPortfolio(name string) Portfolio {
 	return Portfolio{
 		Name:      name,
-		Positions: make(map[string]Position),
+		Positions: make(map[Ticker]Position),
 	}
 }
 
-func (p *Portfolio) AddPosition(ticker string, position Position) {
+func (p *Portfolio) AddPosition(ticker Ticker, position Position) {
 	if currentPosition, exists := p.Positions[ticker]; exists {
 		position = currentPosition.Combine(position)
 	}
@@ -279,7 +290,7 @@ func (p *Portfolio) AddPosition(ticker string, position Position) {
 	p.Positions[ticker] = position
 }
 
-func (p *Portfolio) RemovePosition(ticker string, count uint) error {
+func (p *Portfolio) RemovePosition(ticker Ticker, count uint) error {
 	currentPosition, exists := p.Positions[ticker]
 	if !exists {
 		return errors.New("Attempt to remove position you don't have")
