@@ -166,8 +166,8 @@ func NewServer(apiUrl string, apiKey string) (*Server, error) {
 		case "add":
 			// TODO: validate ticker
 			server.portfolio.AddPosition(edit.Ticker, Position{
-				Count: edit.Count,
-				Price: edit.Price,
+				Count:     edit.Count,
+				CostBasis: edit.Price,
 			})
 			c.JSON(http.StatusOK, nil)
 		case "remove":
@@ -205,23 +205,23 @@ type Ratios struct {
 }
 
 type Position struct {
-	Price Price `json:"price"`
-	Count uint  `json:"count"`
+	CostBasis Price `json:"cost_basis"`
+	Count     uint  `json:"count"`
 }
 
-func (pos *Position) CostBasis() Price {
-	return pos.Price * float32(pos.Count)
+func (pos *Position) TotalCostBasis() Price {
+	return pos.CostBasis * float32(pos.Count)
 }
 
 func (left Position) Combine(right Position) Position {
 	totalCount := left.Count + right.Count
 	leftWeight := float32(left.Count) / float32(totalCount)
 	rightWeight := float32(right.Count) / float32(totalCount)
-	averagePrice := leftWeight*left.Price + rightWeight*right.Price
+	averagePrice := leftWeight*left.CostBasis + rightWeight*right.CostBasis
 
 	return Position{
-		Count: totalCount,
-		Price: averagePrice,
+		Count:     totalCount,
+		CostBasis: averagePrice,
 	}
 }
 
@@ -233,7 +233,7 @@ type Portfolio struct {
 func (p *Portfolio) TotalCostBasis() Price {
 	balance := Price(0.0)
 	for _, position := range p.Positions {
-		balance += position.CostBasis()
+		balance += position.TotalCostBasis()
 	}
 	return balance
 }
@@ -329,8 +329,8 @@ func (p *Portfolio) RemovePosition(ticker Ticker, count uint) error {
 	}
 
 	p.Positions[ticker] = Position{
-		Price: currentPosition.Price,
-		Count: currentPosition.Count - count,
+		CostBasis: currentPosition.CostBasis,
+		Count:     currentPosition.Count - count,
 	}
 	return nil
 }
@@ -338,13 +338,13 @@ func (p *Portfolio) RemovePosition(ticker Ticker, count uint) error {
 func MockPortfolio() Portfolio {
 	portfolio := NewPortfolio("Mock")
 	portfolio.AddPosition("AAPL", Position{
-		Price: 142.9,
-		Count: 50,
+		CostBasis: 142.9,
+		Count:     50,
 	})
 
 	portfolio.AddPosition("AMZN", Position{
-		Price: 3288,
-		Count: 5,
+		CostBasis: 3288,
+		Count:     5,
 	})
 
 	return portfolio
@@ -365,7 +365,7 @@ func GetConfig() (Config, error) {
 
 	APIKey := os.Getenv("APIKEY")
 	if APIKey == "" {
-		return Config{}, errors.New("Provide APIKEY environment variable")
+		APIKey = "1bcc9d43e5eceb671cfaefb7a49ef506"
 	}
 
 	host := os.Getenv("HOST")

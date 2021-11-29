@@ -23,14 +23,14 @@ function Portfolio({ posts }) {
   const ratiosValues = Object.keys(ratios).map((title) => <tr>{title}: {ratios[title]}</tr>)
 
   const firstPosition = posts.positions[Object.keys(posts.positions)[0]]
-  const valuesHeader = Object.keys(firstPosition).map((key) => <td>{key}</td>)
+  const valuesHeader = Object.keys(firstPosition).map((key) => <td>{key.replace('_', ' ')}</td>)
   const header = [<td>ticker</td>, <td>current price</td>].concat(valuesHeader)
 
   const positions = Object.keys(posts.positions).map((ticker) =>
     <tr>
       <td>{ticker}</td>
       <td>{posts.prices[ticker]}</td>
-      <td>{posts.positions[ticker].price}</td>
+      <td>{posts.positions[ticker].cost_basis}</td>
       <td>{posts.positions[ticker].count}</td>
     </tr>
   )
