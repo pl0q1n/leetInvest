@@ -106,7 +106,7 @@ function Portfolio({ posts }) {
         </table>
       </div>
       <div>
-        <PlotComponent dcf={1200} price={balance} />
+        <PlotComponent dcf={posts.dcf} price={balance} />
       </div>
       <div>
       {portfolioChanger}

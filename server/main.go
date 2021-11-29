@@ -114,6 +114,7 @@ func NewServer(apiUrl string, apiKey string) (*Server, error) {
 	server.router.GET("/portfolio", func(c *gin.Context) {
 		type PortfolioResponse struct {
 			Portfolio
+			DCF    Price     `json:"dcf"`
 			Prices PricesMap `json:"prices"`
 			Ratios Ratios    `json:"ratios"`
 		}
@@ -125,8 +126,14 @@ func NewServer(apiUrl string, apiKey string) (*Server, error) {
 			return
 		}
 
-		totalPrice := server.portfolio.TotalCurrentPrice(prices)
-		currentRatios, err := GetAggregateRatios(&server.portfolio, server.client, totalPrice)
+		currentRatios, err := GetAggregateRatios(&server.portfolio, server.client, prices)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			log.Printf("API request error: %v\n", err)
+			return
+		}
+
+		dcf, err := GetAggregateDCFValue(&server.portfolio, server.client, prices)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 			log.Printf("API request error: %v\n", err)
@@ -135,6 +142,7 @@ func NewServer(apiUrl string, apiKey string) (*Server, error) {
 
 		c.JSON(http.StatusOK, PortfolioResponse{
 			server.portfolio,
+			dcf,
 			prices,
 			currentRatios,
 		})
@@ -201,7 +209,7 @@ type Position struct {
 	Count uint  `json:"count"`
 }
 
-func (pos *Position) TotalPrice() Price {
+func (pos *Position) CostBasis() Price {
 	return pos.Price * float32(pos.Count)
 }
 
@@ -225,12 +233,12 @@ type Portfolio struct {
 func (p *Portfolio) TotalCostBasis() Price {
 	balance := Price(0.0)
 	for _, position := range p.Positions {
-		balance += position.TotalPrice()
+		balance += position.CostBasis()
 	}
 	return balance
 }
 
-func (p *Portfolio) TotalCurrentPrice(prices PricesMap) Price {
+func (p *Portfolio) GetTotalPrice(prices PricesMap) Price {
 	balance := Price(0.0)
 	for ticker, position := range p.Positions {
 		balance += prices[ticker] * float32(position.Count)
@@ -256,7 +264,24 @@ func GetCurrentPrices(p *Portfolio, client *APIClient) (PricesMap, error) {
 	return prices, nil
 }
 
-func GetAggregateRatios(p *Portfolio, client *APIClient, totalPrice Price) (Ratios, error) {
+func GetAggregateDCFValue(p *Portfolio, client *APIClient, prices PricesMap) (Price, error) {
+	totalPrice := p.GetTotalPrice(prices)
+	dcf := Price(0.0)
+	for ticker, position := range p.Positions {
+		shareDCF, err := client.GetDCFValuation(ticker)
+		if err != nil {
+			return 0.0, err
+		}
+
+		posWeight := prices[ticker] * Price(position.Count) / totalPrice
+		dcf += posWeight * float32(shareDCF.Dcf) * Price(position.Count)
+	}
+
+	return dcf, nil
+}
+
+func GetAggregateRatios(p *Portfolio, client *APIClient, prices PricesMap) (Ratios, error) {
+	totalPrice := p.GetTotalPrice(prices)
 	ratios := Ratios{}
 	for ticker, position := range p.Positions {
 		shareRatios, err := client.GetRatios(ticker)
@@ -264,7 +289,7 @@ func GetAggregateRatios(p *Portfolio, client *APIClient, totalPrice Price) (Rati
 			return Ratios{}, err
 		}
 
-		posWeight := position.TotalPrice() / totalPrice
+		posWeight := prices[ticker] * float32(position.Count) / totalPrice
 
 		ratios.PE += posWeight * shareRatios.PE
 		ratios.PEG += posWeight * shareRatios.PEG
