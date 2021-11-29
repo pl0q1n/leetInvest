@@ -20,6 +20,19 @@ func NewClient(url string, key string) (*APIClient, error) {
 	return &APIClient{client: client}, nil
 }
 
+func (api *APIClient) GetCurrentPrice(ticker string) (float32, error) {
+	quote, err := api.client.Stock.QuoteShort(ticker)
+	if err != nil {
+		return 0.0, err
+	}
+
+	if len(quote) == 0 {
+		return 0.0, errors.New("empty response")
+	}
+
+	return float32(quote[0].Price), nil
+}
+
 func (api *APIClient) GetRatios(ticker string) (Ratios, error) {
 	request := requests.RequestFinancialRatios{
 		Symbol: ticker,

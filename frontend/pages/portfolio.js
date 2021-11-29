@@ -24,11 +24,12 @@ function Portfolio({ posts }) {
 
   const firstPosition = posts.positions[Object.keys(posts.positions)[0]]
   const valuesHeader = Object.keys(firstPosition).map((key) => <td>{key}</td>)
-  const header = [<td>ticker</td>].concat(valuesHeader)
+  const header = [<td>ticker</td>, <td>current price</td>].concat(valuesHeader)
 
   const positions = Object.keys(posts.positions).map((ticker) =>
     <tr>
       <td>{ticker}</td>
+      <td>{posts.prices[ticker]}</td>
       <td>{posts.positions[ticker].price}</td>
       <td>{posts.positions[ticker].count}</td>
     </tr>
@@ -89,8 +90,8 @@ function Portfolio({ posts }) {
       </form>
   )
 
-  const addToBalance = (b, position) => b + position.price * position.count
-  const balance = Object.values(posts.positions).reduce(addToBalance, 0)
+  const addToBalance = (b, ticker) => b + posts.prices[ticker] * posts.positions[ticker].count
+  const balance = Object.keys(posts.positions).reduce(addToBalance, 0)
   return (
     <div className={styles.Portfolio}>
       <h1>Portfolio: {posts.name}</h1>
@@ -105,7 +106,7 @@ function Portfolio({ posts }) {
         </table>
       </div>
       <div>
-        <PlotComponent dcf={1200} price={1234} />
+        <PlotComponent dcf={1200} price={balance} />
       </div>
       <div>
       {portfolioChanger}

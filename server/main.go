@@ -110,7 +110,8 @@ func NewServer(apiUrl string, apiKey string) (*Server, error) {
 	server.router.GET("/portfolio", func(c *gin.Context) {
 		type PortfolioResponse struct {
 			Portfolio
-			Ratios Ratios `json:"ratios"`
+			Prices map[string]float32 `json:"prices"`
+			Ratios Ratios             `json:"ratios"`
 		}
 
 		ratios, err := GetAggregateRatios(&server.portfolio, server.client)
@@ -120,8 +121,16 @@ func NewServer(apiUrl string, apiKey string) (*Server, error) {
 			return
 		}
 
+		prices, err := GetCurrentPrices(&server.portfolio, server.client)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			log.Printf("API request error: %v\n", err)
+			return
+		}
+
 		c.JSON(http.StatusOK, PortfolioResponse{
 			server.portfolio,
+			prices,
 			ratios,
 		})
 	})
@@ -214,6 +223,25 @@ func (p *Portfolio) GetBalance() float32 {
 		balance += position.TotalPrice()
 	}
 	return balance
+}
+
+func GetCurrentPrices(p *Portfolio, client *APIClient) (map[string]float32, error) {
+	prices := make(map[string]float32)
+
+	for ticker := range p.Positions {
+		if _, exist := prices[ticker]; exist {
+			continue
+		}
+
+		price, err := client.GetCurrentPrice(ticker)
+		if err != nil {
+			return nil, err
+		}
+
+		prices[ticker] = price
+	}
+
+	return prices, nil
 }
 
 func GetAggregateRatios(p *Portfolio, client *APIClient) (Ratios, error) {
