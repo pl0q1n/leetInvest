@@ -133,7 +133,7 @@ func NewServer(apiUrl string, apiKey string) (*Server, error) {
 			return
 		}
 
-		dcf, err := GetAggregateDCFValue(&server.portfolio, server.client, prices)
+		dcf, err := GetAggregateDCFValue(&server.portfolio, server.client)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
 			log.Printf("API request error: %v\n", err)
@@ -264,8 +264,7 @@ func GetCurrentPrices(p *Portfolio, client *APIClient) (PricesMap, error) {
 	return prices, nil
 }
 
-func GetAggregateDCFValue(p *Portfolio, client *APIClient, prices PricesMap) (Price, error) {
-	totalPrice := p.GetTotalPrice(prices)
+func GetAggregateDCFValue(p *Portfolio, client *APIClient) (Price, error) {
 	dcf := Price(0.0)
 	for ticker, position := range p.Positions {
 		shareDCF, err := client.GetDCFValuation(ticker)
@@ -273,8 +272,7 @@ func GetAggregateDCFValue(p *Portfolio, client *APIClient, prices PricesMap) (Pr
 			return 0.0, err
 		}
 
-		posWeight := prices[ticker] * Price(position.Count) / totalPrice
-		dcf += posWeight * float32(shareDCF.Dcf) * Price(position.Count)
+		dcf += float32(shareDCF.Dcf) * Price(position.Count)
 	}
 
 	return dcf, nil
