@@ -5,12 +5,12 @@ import styles from '../styles/Home.module.css'
 
 const GaugeComponent = dynamic(
   () => import('../components/gaugeHandler'),
-  {ssr: false}
+  { ssr: false }
 );
 
 const PlotComponent = dynamic(
   () => import('../components/plotHandler'),
-  {ssr: false}
+  { ssr: false }
 )
 
 const WaterfallComponent = dynamic(
@@ -20,17 +20,17 @@ const WaterfallComponent = dynamic(
 
 const Search = () => {
   return (
-   <form>
-        <label htmlFor="header-search">
-            <span className="visually-hidden">Share search</span>
-        </label>
-        <input
-            type="text"
-            id="header-search"
-            placeholder="Enter ticker"
-            name="share"
-        />
-        <button type="submit">View</button>
+    <form>
+      <label htmlFor="header-search">
+        <span className="visually-hidden">Share search</span>
+      </label>
+      <input
+        type="text"
+        id="header-search"
+        placeholder="Enter ticker"
+        name="share"
+      />
+      <button type="submit">View</button>
     </form>
   )
 }
@@ -49,7 +49,7 @@ export default function StockScreener() {
   const { search } = window.location;
   const query = new URLSearchParams(search).get('share');
 
-  useEffect(async ()=>{
+  useEffect(async () => {
     if (query) {
       const response = await getShareInfo(query)
       console.log(response)
@@ -69,31 +69,32 @@ export default function StockScreener() {
       script.async = false;
       const symbol = `NASDAQ:${query}`
       script.onload = () => {
-      new window.TradingView.widget({
-        "width": 980,
-        "height": 610,
-        "symbol": symbol,
-        "interval": "D",
-        "timezone": "Etc/UTC",
-        "theme": "light",
-        "style": "1",
-        "locale": "ru",
-        "toolbar_bg": "#f1f3f6",
-        "enable_publishing": false,
-        "allow_symbol_change": true,
-        "container_id": "tradingview_95742"
-      })}
+        new window.TradingView.widget({
+          "width": 980,
+          "height": 610,
+          "symbol": symbol,
+          "interval": "D",
+          "timezone": "Etc/UTC",
+          "theme": "light",
+          "style": "1",
+          "locale": "ru",
+          "toolbar_bg": "#f1f3f6",
+          "enable_publishing": false,
+          "allow_symbol_change": true,
+          "container_id": "tradingview_95742"
+        })
+      }
       tvRef.current.appendChild(script)
     }
-  },[query])
+  }, [query])
 
 
   if (data && DCF && income) {
-      const ratios = Object.keys(data).map((title) => <tr>{title}: {data[title]}</tr>)
-      const gauge = <GaugeComponent pe={data.priceEarningsRatio} min={0} max={50} />;
-      const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
+    const ratios = Object.keys(data).map((title) => <tr>{title}: {data[title]}</tr>)
+    const gauge = <GaugeComponent value={data.priceEarningsRatio} min={0} max={50} />;
+    const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
-      return (
+    return (
       <div className={styles.Portfolio}>
         <Search />
         <div>{ratios}</div>
@@ -106,24 +107,21 @@ export default function StockScreener() {
         <div>
           <WaterfallComponent
             income={income}
-            />
+          />
         </div>
-        <div  className="tradingview-widget-container" ref={tvRef}>
+        <div className="tradingview-widget-container" ref={tvRef}>
           <div id="tradingview_95742"></div>
         </div>
       </div>
 
-      )
+    )
   } else {
     return (
       <div className={styles.Portfolio}>
         <Search />
       </div>
-
     )
-
   }
-
 }
 
 function getAPIUrl(path) {
@@ -141,8 +139,7 @@ function getAPIUrl(path) {
   }
 }
 
-
-export async function getShareInfo(ticker) {
+async function getShareInfo(ticker) {
   // Call an external API endpoint to get posts.
   // You can use any data fetching library
   const res = await fetch(getAPIUrl(`/ratios/${ticker}`))
@@ -150,13 +147,13 @@ export async function getShareInfo(ticker) {
   return data
 }
 
-export async function getDCF(ticker) {
+async function getDCF(ticker) {
   const res = await fetch(getAPIUrl(`/discounted-cash-flow/${ticker}`))
   const data = await res.json()
   return data
 }
 
-export async function getIncome(ticker) {
+async function getIncome(ticker) {
   const res = await fetch(getAPIUrl(`/income-statement/${ticker}`))
   const data = await res.json()
   return data

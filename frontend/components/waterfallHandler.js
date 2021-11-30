@@ -41,7 +41,7 @@ function WaterfallTemplate(statement, year) {
 export default function WaterfallHandler(props) {
     console.log("ALLLOOOO")
     console.log(props)
-    
+
     const waterfalls = props.income.map(inc => {
         const date = inc.date.substring(0,4)
         return WaterfallTemplate(inc, date)

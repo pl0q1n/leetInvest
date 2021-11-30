@@ -6,11 +6,10 @@ export default function Home() {
     <div className={styles.container}>
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Leet [not really] invest 
+          Leet [not really] invest
         </h1>
 
         <div className={styles.grid}>
-          
           <Link href="/portfolio">
             <a className={styles.card}>
               <h2>Portfolio &rarr;</h2>
@@ -24,7 +23,7 @@ export default function Home() {
               <p>Nothing is here for now folks</p>
             </a>
           </Link>
-        
+
         </div>
       </main>
     </div>

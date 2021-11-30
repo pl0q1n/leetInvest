@@ -1,5 +1,6 @@
-import styles from '../styles/Home.module.css'
 import dynamic from 'next/dynamic'
+import { DataGrid } from '@mui/x-data-grid'
+import { Container, Stack, Paper, Typography } from '@mui/material'
 import { useState, useEffect } from 'react'
 
 const PlotComponent = dynamic(
@@ -10,39 +11,65 @@ const PlotComponent = dynamic(
 const Portfolio = () => {
   const [portfolio, setPoftfolio] = useState(null)
   const [update, setUpdate] = useState({ type: "add" })
+  const [updateCounter, setUpdateCounter] = useState(0)
 
   useEffect(async () => {
     const portfolio = await getPortfolio()
     setPoftfolio(portfolio)
-  }, [])
+  }, [updateCounter])
 
   if (!portfolio) {
     return <> Loading... </>
   }
 
-  console.log(portfolio)
+  const ratioColumns = [
+    {
+      field: 'metric',
+      headerName: 'metric',
+      width: 150
+    },
+    {
+      field: 'value',
+      headerName: 'value',
+      width: 150
+    }
+  ]
 
-  const ratios = portfolio.ratios
-  const ratiosValues = Object.keys(ratios).map((title) => <tr>{title}: {ratios[title]}</tr>)
+  const ratioRows = Object.entries(portfolio.ratios).map(([name, value], idx) => {
+    return {
+      id: idx,
+      metric: name,
+      value: value
+    }
+  })
 
   const firstPosition = portfolio.positions[Object.keys(portfolio.positions)[0]]
-  const valuesHeader = Object.keys(firstPosition).map((key) => <td>{key.replace('_', ' ')}</td>)
-  const header = [<td>ticker</td>, <td>current price</td>].concat(valuesHeader)
+  const columns = ["ticker", "current_price"].concat(Object.keys(firstPosition)).map(name => {
+    return {
+      field: name,
+      headerName: name.replace('_', ' '),
+      width: 150
+    }
+  })
 
-  const positions = Object.keys(portfolio.positions).map((ticker) =>
-    <tr>
-      <td>{ticker}</td>
-      <td>{portfolio.prices[ticker]}</td>
-      <td>{portfolio.positions[ticker].cost_basis}</td>
-      <td>{portfolio.positions[ticker].count}</td>
-    </tr>
-  )
+  const rows = Object.keys(portfolio.positions).map((ticker, idx) => {
+    return {
+      id: idx,
+      ticker: ticker,
+      current_price: portfolio.prices[ticker],
+      cost_basis: portfolio.positions[ticker].cost_basis,
+      count: portfolio.positions[ticker].count
+    }
+  })
 
   const portfolioChanger = (
     <form onSubmit={(event) => {
       event.preventDefault();
       console.log("sent update for portfolio: ", update)
-      sendPortfolioUpdate(update)
+      sendPortfolioUpdate(update).then(() => {
+        console.log('Updating update counter to', updateCounter + 1)
+        setUpdateCounter(updateCounter + 1)
+      })
     }}>
       <div>
         <label>
@@ -97,25 +124,33 @@ const Portfolio = () => {
   const addToBalance = (b, ticker) => b + portfolio.prices[ticker] * portfolio.positions[ticker].count
   const balance = Object.keys(portfolio.positions).reduce(addToBalance, 0)
   return (
-    <div className={styles.Portfolio}>
-      <h1>Portfolio: {portfolio.name}</h1>
-      <h1>Total balance: {balance}$</h1>
-      <h2>Fundamental of portfolio:</h2>
-      <div>{ratiosValues}</div>
-      <h2>Shares:</h2>
-      <div>
-        <table cellspacing="2" border="1" cellPadding="5" width="600">
-          <tr>{header}</tr>
-          {positions}
-        </table>
-      </div>
-      <div>
-        <PlotComponent dcf={portfolio.dcf} price={balance} />
-      </div>
-      <div>
-        {portfolioChanger}
-      </div>
-    </div>
+    <Container maxWidth='md'>
+      <Stack spacing={2}>
+        <Paper elevation={0}>
+          {/* TODO: get rid of xs copy-paste */}
+          <Typography variant='h3' sx={{ ml: 2, mt: 2, mb: 2 }}> Portfolio: {portfolio.name} </Typography>
+          <Typography variant='h4' sx={{ ml: 2, mt: 2, mb: 2 }}> Total balance: {balance}$ </Typography>
+        </Paper>
+
+        <Paper elevation={0}>
+          <Typography variant='h5' sx={{ ml: 2, mt: 2, mb: 2 }}>Fundamental of portfolio:</Typography>
+          <DataGrid rows={ratioRows} columns={ratioColumns} autoHeight density='compact' />
+        </Paper>
+
+        <Paper elevation={0}>
+          <Typography variant='h5' sx={{ ml: 2, mt: 2, mb: 2 }}> Shares </Typography>
+          <DataGrid rows={rows} columns={columns} autoHeight density='compact' />
+        </Paper>
+
+        <Paper elevation={0}>
+          <PlotComponent dcf={portfolio.dcf} price={balance} />
+        </Paper>
+
+        <Paper elevation={0}>
+          {portfolioChanger}
+        </Paper>
+      </Stack>
+    </Container>
   )
 }
 
