@@ -360,7 +360,10 @@ type Config struct {
 func GetConfig() (Config, error) {
 	APIUrl := os.Getenv("APIURL")
 	if APIUrl == "" {
+		log.Printf("Working with local nginx cache \n")
 		APIUrl = "http://localhost:80/finapi/%s"
+	} else {
+		log.Printf("Working with remote API only \n")
 	}
 
 	APIKey := os.Getenv("APIKEY")

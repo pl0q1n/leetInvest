@@ -1,7 +1,6 @@
 import Plot from 'react-plotly.js';
 import { useState } from 'react'
 
-
 export default function PlotHandler(props) {
   const [showHover, setShowHover] = useState(false)
   const params = props
@@ -15,36 +14,30 @@ export default function PlotHandler(props) {
   }
 
   return (
-    // <div>
+    <div>
     <Plot
       data={[
         {
           delta: { reference: dcf, decreasing: { color: "green" }, increasing: { color: "red" } },
           value: price,
-          number: { prefix: "$" },
+          number: { prefix: "$", font: {color: 'white'} },
           type: 'indicator',
           mode: 'number+gauge+delta',
           text: [format],
           gauge: {
             shape: "bullet",
-            axis: { range: [null, right_border] },
-            bgcolor: "white",
-            steps: [{ range: [0, dcf], color: "cyan" },
-            { range: [dcf, dcf * 1.25], color: "orange" },
-            { range: [dcf * 1.25, right_border], color: "red" }],
-            bar: { color: "black" }
+            axis: { range: [null, right_border], tickcolor: "white", tickfont: {color: "white"} },
+            steps: [{ range: [0, dcf], color: "#2dc97e" },
+            { range: [dcf, dcf * 1.25], color: "#ffc701" },
+            { range: [dcf * 1.25, right_border], color: "#e64141" }],
+            bar: { color: "black", opacity: 0.5 }
           }
         },
       ]}
 
-      layout={{ width: 600, height: 220, title: 'Fair value' }}
-      onHover={(e) => {
-        console.log("XUI")
-        setShowHover(!showHover)
-      }}
+      layout={{ width: 600, height: 220, title: {text: 'Fair value', font: {color: 'white'}},  paper_bgcolor: '#1b222d'}}
     />
-    //   {showHover&&<div>HUI</div>}
-    //   </div>
+    </div>
   );
 
 }

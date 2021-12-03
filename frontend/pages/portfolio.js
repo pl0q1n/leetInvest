@@ -2,6 +2,8 @@ import dynamic from 'next/dynamic'
 import { DataGrid } from '@mui/x-data-grid'
 import { Container, Stack, Paper, Typography } from '@mui/material'
 import { useState, useEffect } from 'react'
+import Grid from '@mui/material/Grid';
+
 
 const PlotComponent = dynamic(
   () => import('../components/plotHandler'),
@@ -143,7 +145,16 @@ const Portfolio = () => {
         </Paper>
 
         <Paper elevation={0}>
-          <PlotComponent dcf={portfolio.dcf} price={balance} />
+          <Grid
+          container
+          direction="column"
+          alignItems="center"
+          justifyContent="center">
+            <Grid item xs={3}>
+              <PlotComponent dcf={portfolio.dcf} price={balance} />
+              
+            </Grid>   
+          </Grid>
         </Paper>
 
         <Paper elevation={0}>
