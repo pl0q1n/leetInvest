@@ -30,7 +30,8 @@ function WaterfallTemplate(statement, year) {
         ],
         connector: {
             line: {
-                color: "rgb(63, 63, 63)"
+                color: "rgb(63, 63, 63)",
+                mode: "spanning"
             }
         },
     }
@@ -63,7 +64,8 @@ export default function WaterfallHandler(props) {
                     type: "linear"
                 },
                 autosize: true,
-                showlegend: true
+                paper_bgcolor: "#1b222d",
+                plot_bgcolor: "#1b222d"
             }}
         />
     );

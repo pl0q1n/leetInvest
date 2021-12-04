@@ -20,7 +20,7 @@ const GaugeHandler = ({ value, min, max }) => {
                 pointer: {
                     length: 0.5, // // Relative to gauge radius
                     strokeWidth: 0.035, // The thickness
-                    color: '#000000' // Fill color
+                    color: '#fff' // Fill color
                 },
                 limitMax: false,
                 limitMin: false,
@@ -32,8 +32,8 @@ const GaugeHandler = ({ value, min, max }) => {
                 percentColors: [[0, "#4bef0c"], [0.25, "#bcef0c"], [0.50, "#f9c802"], [0.75, "#f94d02"], [1.0, "#ff0000"]],
                 staticLabels: {
                     font: "10px sans-serif",  // Specifies font
-                    labels: labels.map(l => l.toString()),  // Print labels at these values
-                    color: "#000000",  // Optional: Label text color
+                    labels: labels,  // Print labels at these values
+                    color: "#fff",  // Optional: Label text color
                     fractionDigits: 0  // Optional: Numerical precision. 0=round off.
                 },
                 renderTicks: {
@@ -48,7 +48,6 @@ const GaugeHandler = ({ value, min, max }) => {
                 }
             }}
             // any other props are passed through to the canvas element
-
             className='gauge-canvas'
             style={{ height: '150px' }}
         />

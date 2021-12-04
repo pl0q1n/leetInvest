@@ -2,6 +2,8 @@ import dynamic from 'next/dynamic'
 import { useEffect, useState, useRef } from 'react'
 import React from "react"
 import styles from '../styles/Home.module.css'
+import { DataGrid } from '@mui/x-data-grid'
+
 
 const GaugeComponent = dynamic(
   () => import('../components/gaugeHandler'),
@@ -70,17 +72,16 @@ export default function StockScreener() {
       const symbol = `NASDAQ:${query}`
       script.onload = () => {
         new window.TradingView.widget({
-          "width": 980,
+          "width": "100%",
           "height": 610,
           "symbol": symbol,
           "interval": "D",
           "timezone": "Etc/UTC",
-          "theme": "light",
+          "theme": "dark",
           "style": "1",
-          "locale": "ru",
-          "toolbar_bg": "#f1f3f6",
+          "locale": "en",
           "enable_publishing": false,
-          "allow_symbol_change": true,
+          "allow_symbol_change": false,
           "container_id": "tradingview_95742"
         })
       }
@@ -89,15 +90,88 @@ export default function StockScreener() {
   }, [query])
 
 
+  const wantedMetrics = [
+    "grossProfitMargin",
+    "operatingProfitMargin",
+    "netProfitMargin",
+    "returnOnAssets",
+    "returnOnEquity",
+    "returnOnCapitalEmployed",
+    "debtRatio",
+    "debtEquityRatio",
+    "interestCoverage",
+    "operatingCashFlowPerShare",
+    "freeCashFlowPerShare",
+    "priceToBookRatio",
+    "priceToSalesRatio",
+    "priceEarningsRatio",
+    "priceEarningsToGrowthRatio",
+    "priceSalesRatio",
+    "dividendYield",
+    "priceFairValue",
+  ]
+
   if (data && DCF && income) {
-    const ratios = Object.keys(data).map((title) => <tr>{title}: {data[title]}</tr>)
     const gauge = <GaugeComponent value={data.priceEarningsRatio} min={0} max={50} />;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
+
+    // TODO: Move all table construction to separate files
+    const ratioColumns = [
+      {
+        field: 'metric',
+        headerName: 'metric',
+        width: 350
+      },
+      {
+        field: 'value',
+        headerName: 'value',
+        width: 350
+      }
+    ]
+    data = Object.entries(data).filter( ([name, value]) => typeof value == 'number' && wantedMetrics.includes(name) )
+    const ratioRows = data.map(([name, value], idx) => {
+      return {
+        id: idx,
+        metric: name,
+        value: value.toFixed(3)
+      }
+    })
+    
+
+    const incomeColums = [
+    {
+      field: 'metric',
+      headerName: 'metric',
+      width: 350
+    },
+    {
+      field: 'value',
+      headerName: 'value',
+      width: 350
+    }
+    ]
+
+
+    
+    const incomeRows = Object.entries(income[0]).map(([name, value], idx) => {
+      return {
+        id: idx,
+        metric: name,
+        value: value
+      }
+    })
+
     return (
       <div className={styles.Portfolio}>
+        <div style={{textAlign:'center'}}>{query}</div>
         <Search />
-        <div>{ratios}</div>
+        <br></br>
+        <div style={{width: '100%'}}>
+        <DataGrid rows={ratioRows} columns={ratioColumns} autoHeight density='compact' />
+        </div>
+        <br></br>
+        <DataGrid rows={incomeRows} columns={incomeColums} autoHeight density='compact' />
         <br></br>
         <div>
           PE: {data.PriceEarningsRatio}
@@ -146,6 +220,7 @@ async function getShareInfo(ticker) {
   const data = await res.json()
   return data
 }
+
 
 async function getDCF(ticker) {
   const res = await fetch(getAPIUrl(`/discounted-cash-flow/${ticker}`))
