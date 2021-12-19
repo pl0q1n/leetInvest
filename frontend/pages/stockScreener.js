@@ -3,7 +3,8 @@ import { useEffect, useState, useRef } from 'react'
 import React from "react"
 import styles from '../styles/Home.module.css'
 import { DataGrid } from '@mui/x-data-grid'
-
+import Button from '@mui/material/Button';
+import GetColsNRows from '../components/DataGripHelper'
 
 const GaugeComponent = dynamic(
   () => import('../components/gaugeHandler'),
@@ -86,6 +87,8 @@ export default function StockScreener() {
         })
       }
       tvRef.current.appendChild(script)
+
+
     }
   }, [query])
 
@@ -115,52 +118,11 @@ export default function StockScreener() {
     const gauge = <GaugeComponent value={data.priceEarningsRatio} min={0} max={50} />;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
+    const entries = Object.entries(data).filter( ([name, value]) => typeof value == 'number' && wantedMetrics.includes(name) )
+    const [ratioColumns, ratioRows] = GetColsNRows(entries, (val) => {return val.toFixed(3)})
 
-    // TODO: Move all table construction to separate files
-    const ratioColumns = [
-      {
-        field: 'metric',
-        headerName: 'metric',
-        width: 350
-      },
-      {
-        field: 'value',
-        headerName: 'value',
-        width: 350
-      }
-    ]
-    data = Object.entries(data).filter( ([name, value]) => typeof value == 'number' && wantedMetrics.includes(name) )
-    const ratioRows = data.map(([name, value], idx) => {
-      return {
-        id: idx,
-        metric: name,
-        value: value.toFixed(3)
-      }
-    })
-    
+    const [incomeColums, incomeRows] = GetColsNRows(Object.entries(income[0]), (n) => n)
 
-    const incomeColums = [
-    {
-      field: 'metric',
-      headerName: 'metric',
-      width: 350
-    },
-    {
-      field: 'value',
-      headerName: 'value',
-      width: 350
-    }
-    ]
-
-
-    
-    const incomeRows = Object.entries(income[0]).map(([name, value], idx) => {
-      return {
-        id: idx,
-        metric: name,
-        value: value
-      }
-    })
 
     return (
       <div className={styles.Portfolio}>
@@ -186,6 +148,10 @@ export default function StockScreener() {
         <div className="tradingview-widget-container" ref={tvRef}>
           <div id="tradingview_95742"></div>
         </div>
+
+        <Button variant="contained" onClick={() => {
+          alert('clicked');
+        }}>View Financials</Button>
       </div>
 
     )
