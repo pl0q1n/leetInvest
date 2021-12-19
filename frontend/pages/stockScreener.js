@@ -2,10 +2,13 @@ import dynamic from 'next/dynamic'
 import { useEffect, useState, useRef } from 'react'
 import React from "react"
 import styles from '../styles/Home.module.css'
+import Typography from '@mui/material/Typography'
 import { DataGrid } from '@mui/x-data-grid'
 import Button from '@mui/material/Button';
 import GetColsNRows from '../components/DataGripHelper'
 import IncomeView from '../components/IncomeView'
+import Search from '../components/SearchView'
+import Grid from '@mui/material/Grid';
 
 const GaugeComponent = dynamic(
   () => import('../components/gaugeHandler'),
@@ -22,23 +25,6 @@ const WaterfallComponent = dynamic(
   { ssr: false }
 )
 
-const Search = () => {
-  return (
-    <form>
-      <label htmlFor="header-search">
-        <span className="visually-hidden">Share search</span>
-      </label>
-      <input
-        type="text"
-        id="header-search"
-        placeholder="Enter ticker"
-        name="share"
-      />
-      <button type="submit">View</button>
-    </form>
-  )
-}
-
 export default function StockScreener() {
   // disable server side rendering?
   if (typeof window === 'undefined') {
@@ -47,11 +33,10 @@ export default function StockScreener() {
   const [data, setData] = useState()
   const [DCF, setDcf] = useState()
   const [income, setIncome] = useState()
+  const [query, setQuery] = useState()
 
   const tvRef = useRef(null)
 
-  const { search } = window.location;
-  const query = new URLSearchParams(search).get('share');
 
   useEffect(async () => {
     if (query) {
@@ -119,22 +104,22 @@ export default function StockScreener() {
     const gauge = <GaugeComponent value={data.priceEarningsRatio} min={0} max={50} />;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
-    const entries = Object.entries(data).filter( ([name, value]) => typeof value == 'number' && wantedMetrics.includes(name) )
-    const [ratioColumns, ratioRows] = GetColsNRows(entries, (val) => {return val.toFixed(3)})
-
-    const [incomeColums, incomeRows] = GetColsNRows(Object.entries(income[0]), (n) => n)
-
+    const entries = Object.entries(data).filter(([name, value]) => typeof value == 'number' && wantedMetrics.includes(name))
+    const [ratioColumns, ratioRows] = GetColsNRows(entries, (val) => { return val.toFixed(3) })
 
     return (
       <div className={styles.Portfolio}>
-        <div style={{textAlign:'center'}}>{query}</div>
+        <Typography variant="h2" align="center" component="div" gutterBottom>
+          {query}
+        </Typography>
+
         <Search />
         <br></br>
-        <div style={{width: '100%'}}>
-        <IncomeView incomes={income}/>
+        <div style={{ width: '100%' }}>
+          <IncomeView incomes={income} />
         </div>
-        <div style={{width: '100%'}}>
-        <DataGrid rows={ratioRows} columns={ratioColumns} autoHeight density='compact' />
+        <div style={{ width: '100%' }}>
+          <DataGrid rows={ratioRows} columns={ratioColumns} autoHeight density='compact' />
         </div>
         <br></br>
         <br></br>
@@ -161,7 +146,7 @@ export default function StockScreener() {
   } else {
     return (
       <div className={styles.Portfolio}>
-        <Search />
+        <Search changeQuery={setQuery} />
       </div>
     )
   }

@@ -11,7 +11,6 @@ export default function GetColsNRows(data, format) {
           width: 350
         }
     ]
-    console.log("data inside helper", data)
     const rows = data.map(([name, value], idx) => {
         return {
           id: idx,
