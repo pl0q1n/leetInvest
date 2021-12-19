@@ -5,6 +5,7 @@ import styles from '../styles/Home.module.css'
 import { DataGrid } from '@mui/x-data-grid'
 import Button from '@mui/material/Button';
 import GetColsNRows from '../components/DataGripHelper'
+import IncomeView from '../components/IncomeView'
 
 const GaugeComponent = dynamic(
   () => import('../components/gaugeHandler'),
@@ -130,10 +131,12 @@ export default function StockScreener() {
         <Search />
         <br></br>
         <div style={{width: '100%'}}>
+        <IncomeView incomes={income}/>
+        </div>
+        <div style={{width: '100%'}}>
         <DataGrid rows={ratioRows} columns={ratioColumns} autoHeight density='compact' />
         </div>
         <br></br>
-        <DataGrid rows={incomeRows} columns={incomeColums} autoHeight density='compact' />
         <br></br>
         <div>
           PE: {data.PriceEarningsRatio}
