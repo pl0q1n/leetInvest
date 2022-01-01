@@ -9,6 +9,7 @@ import GetColsNRows from '../components/DataGripHelper'
 import IncomeView from '../components/IncomeView'
 import Search from '../components/SearchView'
 import Grid from '@mui/material/Grid';
+import CompanyOverview from '../components/CompanyOverview'
 
 const GaugeComponent = dynamic(
   () => import('../components/gaugeHandler'),
@@ -120,15 +121,13 @@ export default function StockScreener() {
         </Typography>
 
         <Search changeQuery={setQuery} />
-        <br></br>
+        <CompanyOverview data={profile}/>
         <div style={{ width: '100%' }}>
           <IncomeView incomes={income} />
         </div>
         <div style={{ width: '100%' }}>
           <DataGrid rows={ratioRows} columns={ratioColumns} autoHeight density='compact' />
         </div>
-        <br></br>
-        <br></br>
         <div>
           PE: {data.PriceEarningsRatio}
           {gauge}
