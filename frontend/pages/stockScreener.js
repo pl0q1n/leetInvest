@@ -33,49 +33,52 @@ export default function StockScreener() {
   const [data, setData] = useState()
   const [DCF, setDcf] = useState()
   const [income, setIncome] = useState()
+  const [profile, setProfile] = useState()
   const [query, setQuery] = useState()
 
   const tvRef = useRef(null)
 
-
   useEffect(async () => {
-    if (query) {
-      const response = await getShareInfo(query)
-      console.log(response)
-      setData(response[0])
-
-      const dcf = await getDCF(query)
-      console.log(dcf)
-      setDcf(dcf[0])
-
-      const income = await getIncome(query)
-      console.log("income")
-      console.log(income)
-      setIncome(income)
-
-      const script = document.createElement('script');
-      script.src = 'https://s3.tradingview.com/tv.js'
-      script.async = false;
-      const symbol = `NASDAQ:${query}`
-      script.onload = () => {
-        new window.TradingView.widget({
-          "width": "100%",
-          "height": 610,
-          "symbol": symbol,
-          "interval": "D",
-          "timezone": "Etc/UTC",
-          "theme": "dark",
-          "style": "1",
-          "locale": "en",
-          "enable_publishing": false,
-          "allow_symbol_change": false,
-          "container_id": "tradingview_95742"
-        })
-      }
-      tvRef.current.appendChild(script)
-
-
+    if (!query) {
+      return
     }
+
+    const response = await getShareInfo(query)
+    console.log(response)
+    setData(response[0])
+
+    const dcf = await getDCF(query)
+    console.log(dcf)
+    setDcf(dcf[0])
+
+    const income = await getIncome(query)
+    console.log("income")
+    console.log(income)
+    setIncome(income)
+
+    const profile = await getProfile(query)
+    setProfile(profile[0])
+
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/tv.js'
+    script.async = false;
+    const symbol = `NASDAQ:${query}`
+    script.onload = () => {
+      new window.TradingView.widget({
+        "width": "100%",
+        "height": 610,
+        "symbol": symbol,
+        "interval": "D",
+        "timezone": "Etc/UTC",
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "enable_publishing": false,
+        "allow_symbol_change": false,
+        "container_id": "tradingview_95742"
+      })
+    }
+    tvRef.current.appendChild(script)
   }, [query])
 
 
@@ -100,11 +103,14 @@ export default function StockScreener() {
     "priceFairValue",
   ]
 
-  if (data && DCF && income) {
+  // TODO: request data concurrently
+  if (data && DCF && income && profile) {
     const gauge = <GaugeComponent value={data.priceEarningsRatio} min={0} max={50} />;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
     const entries = Object.entries(data).filter(([name, value]) => typeof value == 'number' && wantedMetrics.includes(name))
+    entries.push(['eps', income[0]['eps']])
+    entries.push(['beta', profile['beta']])
     const [ratioColumns, ratioRows] = GetColsNRows(entries, (val) => { return val.toFixed(3) })
 
     return (
@@ -113,7 +119,7 @@ export default function StockScreener() {
           {query}
         </Typography>
 
-        <Search />
+        <Search changeQuery={setQuery} />
         <br></br>
         <div style={{ width: '100%' }}>
           <IncomeView incomes={income} />
@@ -167,25 +173,27 @@ function getAPIUrl(path) {
   }
 }
 
+async function getData(path) {
+  const res = await fetch(getAPIUrl(path))
+  const data = await res.json()
+  return data
+}
+
 async function getShareInfo(ticker) {
   // Call an external API endpoint to get posts.
   // You can use any data fetching library
-  const res = await fetch(getAPIUrl(`/ratios/${ticker}`))
-  const data = await res.json()
-  return data
+  return await getData(`/ratios/${ticker}`)
 }
 
 
 async function getDCF(ticker) {
-  const res = await fetch(getAPIUrl(`/discounted-cash-flow/${ticker}`))
-  const data = await res.json()
-  return data
+  return await getData(`/discounted-cash-flow/${ticker}`)
 }
 
 async function getIncome(ticker) {
-  const res = await fetch(getAPIUrl(`/income-statement/${ticker}`))
-  const data = await res.json()
-  return data
+  return await getData(`/income-statement/${ticker}`)
 }
 
-
+async function getProfile(ticker) {
+  return await getData(`/profile/${ticker}`)
+}
