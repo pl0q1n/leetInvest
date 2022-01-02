@@ -63,8 +63,6 @@ export default function FlexyIncomeView(incomes) {
             {
                 field: income[i].calendarYear,
                 renderCell: (params) => {
-                    console.log("DEBUG BLUA: ", params.value)
-
                     const diff = params.value.prev == "" ? "" : (params.value.curr / params.value.prev * 100) - 100
                     const diff_comp = (() => {
                         if (diff == "") {

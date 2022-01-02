@@ -1,9 +1,10 @@
 import Plot from 'react-plotly.js';
 
 // TODO: Split into renderer and income processing
-function WaterfallTemplate(statement, year) {
+function WaterfallTemplate(statement, year, visible) {
     const template = {
         name: year,
+        visible: visible ? true : "legendonly", 
         type: "waterfall",
         orientation: "v",
         measure: [
@@ -40,12 +41,9 @@ function WaterfallTemplate(statement, year) {
 }
 
 export default function WaterfallHandler(props) {
-    console.log("ALLLOOOO")
-    console.log(props)
-
-    const waterfalls = props.income.map(inc => {
+    const waterfalls = props.income.map((inc, i) => {
         const date = inc.date.substring(0,4)
-        return WaterfallTemplate(inc, date)
+        return WaterfallTemplate(inc, date, i == 0)
     })
 
 

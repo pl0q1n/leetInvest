@@ -1,3 +1,4 @@
 api_cache/
 logs/
 errors.log
+.vscode/

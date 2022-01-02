@@ -44,16 +44,12 @@ export default function StockScreener() {
     }
 
     const response = await getShareInfo(query)
-    console.log(response)
     setData(response[0])
 
     const dcf = await getDCF(query)
-    console.log(dcf)
     setDcf(dcf[0])
 
     const income = await getIncome(query)
-    console.log("income")
-    console.log(income)
     setIncome(income)
 
     const profile = await getProfile(query)
