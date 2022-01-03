@@ -4,6 +4,7 @@ import React from "react"
 import styles from '../styles/Home.module.css'
 import Typography from '@mui/material/Typography'
 import { DataGrid } from '@mui/x-data-grid'
+import Divider from '@mui/material/Divider';
 import Button from '@mui/material/Button';
 import GetColsNRows from '../components/DataGripHelper'
 import Search from '../components/SearchView'
@@ -114,25 +115,46 @@ export default function StockScreener() {
         <Typography variant="h2" align="center" component="div" gutterBottom>
           {query}
         </Typography>
-
         <Search changeQuery={setQuery} />
+
+        <Typography variant="h2" align="left" component="div" gutterBottom>
+          Company Overview
+        </Typography>
         <CompanyOverview data={profile} />
+        <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
+
+        <Typography variant="h2" align="left" component="div" gutterBottom>
+          Income Statement
+        </Typography>
         <div style={{ width: '100%' }}>
           <FlexyIncomeView incomes={income} />
         </div>
+        <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
+        <Typography variant="h2" align="left" component="div" gutterBottom>
+          Ratios
+        </Typography>
         <div style={{ width: '100%' }}>
           <DataGrid rows={ratioRows} columns={ratioColumns} autoHeight density='compact' />
         </div>
+        <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
+        <Typography variant="h2" align="left" component="div" gutterBottom>
+          Some Plotly
+        </Typography>
         <div>
           PE: {data.PriceEarningsRatio}
           {gauge}
           {bullet}
         </div>
+        <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
         <div>
           <WaterfallComponent
             income={income}
           />
         </div>
+        <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
+        <Typography variant="h2" align="left" component="div" gutterBottom>
+          Trading View
+        </Typography>
         <div className="tradingview-widget-container" ref={tvRef}>
           <div id="tradingview_95742"></div>
         </div>
