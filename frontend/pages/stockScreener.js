@@ -10,6 +10,7 @@ import GetColsNRows from '../components/DataGripHelper'
 import Search from '../components/SearchView'
 import CompanyOverview from '../components/CompanyOverview'
 import FlexyIncomeView from '../components/FlexyIncomeView'
+import { integerPropType } from '@mui/utils'
 
 const GaugeComponent = dynamic(
   () => import('../components/gaugeHandler'),
@@ -23,6 +24,11 @@ const PlotComponent = dynamic(
 
 const WaterfallComponent = dynamic(
   () => import('../components/waterfallHandler'),
+  { ssr: false }
+)
+
+const IncomePlotComponent = dynamic (
+  () => import('../components/IncomePlotView'),
   { ssr: false }
 )
 
@@ -127,6 +133,7 @@ export default function StockScreener() {
           Income Statement
         </Typography>
         <div style={{ width: '100%' }}>
+          <IncomePlotComponent income={income} />
           <FlexyIncomeView incomes={income} />
         </div>
         <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
