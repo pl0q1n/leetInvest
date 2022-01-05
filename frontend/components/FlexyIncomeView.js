@@ -21,27 +21,6 @@ const wantedMetrics =
         "netIncome"
     ]
 
-const columns = [
-    {
-        field: 'date',
-        headerName: 'Year',
-        width: 150,
-        renderCell: (params) => (
-            <strong>
-                {params.value.getFullYear()}
-                <Button
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    style={{ marginLeft: 16 }}
-                >
-                    Open
-                </Button>
-            </strong>
-        ),
-    },
-];
-
 export default function FlexyIncomeView(incomes) {
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -86,30 +65,20 @@ export default function FlexyIncomeView(incomes) {
     }
 
     let rows = []
-
     for (let i = 0; i < wantedMetrics.length; i++) {
-        let new_row =
+        let newRow =
         {
             id: i,
             Metric: wantedMetrics[i]
         }
         for (let j = len - 1; j > -1; j--) {
-            new_row[income[j].calendarYear] = {
+            newRow[income[j].calendarYear] = {
                 curr: income[j][wantedMetrics[i]],
                 prev: j == len - 1 ? "" : income[j + 1][wantedMetrics[i]]
             }
         }
-        rows.push(new_row)
+        rows.push(newRow)
     }
 
     return <DataGrid rows={rows} columns={columns} autoHeight density='compact' rowHeight={100} />
-
-
-    // return (
-    //     <div style={{ height: 300, width: '100%' }}>
-    //         <DataGrid rows={rows} columns={columns} />
-    //     </div>
-    // );
-
-    // check calendarYear
 }

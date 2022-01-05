@@ -39,7 +39,11 @@ export default function IncomePlotView({ income }) {
             data={[revenue_data, earnings_data]}
             layout={{
                 title: {
-                    text: "Revenue and Earnings"
+                    text: "Revenue and Earnings",
+                    font: { color: "white" },
+                },
+                legend: {
+                    font: { color: "white" },
                 },
                 width: 1000, // Unhardcode values to responsive parential style
                 height: 600,
@@ -47,10 +51,12 @@ export default function IncomePlotView({ income }) {
                 paper_bgcolor: "#1b222d",
                 plot_bgcolor: "#1b222d",
                 xaxis: {
+                    color: "white",
                     autorange: true,
                     type: 'date',
                 },
                 yaxis: {
+                    color: "white",
                     autorange: true,
                     rangemode: 'tozero',
                 },

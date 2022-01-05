@@ -4,9 +4,10 @@ import Plot from 'react-plotly.js';
 function WaterfallTemplate(statement, year, visible) {
     const template = {
         name: year,
-        visible: visible ? true : "legendonly", 
+        visible: visible ? true : "legendonly",
         type: "waterfall",
         orientation: "v",
+        number: { font: { color: 'white' } },
         measure: [
             "relative",
             "relative",
@@ -46,20 +47,26 @@ export default function WaterfallHandler(props) {
         return WaterfallTemplate(inc, date, i == 0)
     })
 
-
-    const obj = WaterfallTemplate(props.income, 2022)
     return (
         <Plot
             data={waterfalls}
             layout={{
                 title: {
-                    text: "Profit and loss statement"
+                    text: "Profit and loss statement",
+                    font: { color: "white" },
                 },
                 xaxis: {
+                    color: "white",
                     type: "category"
                 },
                 yaxis: {
-                    type: "linear"
+                    color: "white",
+                    type: "linear",
+                },
+                legend: {
+                    font: {
+                        color: "white",
+                    }
                 },
                 autosize: true,
                 paper_bgcolor: "#1b222d",
