@@ -5,7 +5,6 @@ import styles from '../styles/Home.module.css'
 import Typography from '@mui/material/Typography'
 import { DataGrid } from '@mui/x-data-grid'
 import Divider from '@mui/material/Divider';
-import Button from '@mui/material/Button';
 import GetColsNRows from '../components/DataGripHelper'
 import Search from '../components/SearchView'
 import CompanyOverview from '../components/CompanyOverview'
@@ -86,29 +85,29 @@ export default function StockScreener() {
 
 
   const wantedMetrics = [
-    "grossProfitMargin",
-    "operatingProfitMargin",
-    "netProfitMargin",
-    "returnOnAssets",
-    "returnOnEquity",
-    "returnOnCapitalEmployed",
-    "debtRatio",
-    "debtEquityRatio",
-    "interestCoverage",
-    "operatingCashFlowPerShare",
-    "freeCashFlowPerShare",
-    "priceToBookRatio",
-    "priceToSalesRatio",
-    "priceEarningsRatio",
-    "priceEarningsToGrowthRatio",
-    "priceSalesRatio",
-    "dividendYield",
-    "priceFairValue",
+    "grossProfitMarginTTM",
+    "operatingProfitMarginTTM",
+    "netProfitMarginTTM",
+    "returnOnAssetsTTM",
+    "returnOnEquityTTM",
+    "returnOnCapitalEmployedTTM",
+    "debtRatioTTM",
+    "debtEquityRatioTTM",
+    "interestCoverageTTM",
+    "operatingCashFlowPerShareTTM",
+    "freeCashFlowPerShareTTM",
+    "priceToBookRatioTTM",
+    "priceToSalesRatioTTM",
+    "priceEarningsRatioTTM",
+    "priceEarningsToGrowthRatioTTM",
+    "priceSalesRatioTTM",
+    "dividendYieldTTM",
+    "priceFairValueTTM",
   ]
 
   // TODO: request data concurrently
   if (data && DCF && income && profile) {
-    const gauge = <GaugeComponent value={data.priceEarningsRatio} min={0} max={50} />;
+    const gauge = <GaugeComponent value={data.priceEarningsRatioTTM} min={0} max={50} />;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
     const entries = Object.entries(data).filter(([name, value]) => typeof value == 'number' && wantedMetrics.includes(name))
@@ -148,7 +147,6 @@ export default function StockScreener() {
           Some Plotly
         </Typography>
         <div>
-          PE: {data.PriceEarningsRatio}
           {gauge}
           {bullet}
         </div>
@@ -165,10 +163,6 @@ export default function StockScreener() {
         <div className="tradingview-widget-container" ref={tvRef}>
           <div id="tradingview_95742"></div>
         </div>
-
-        <Button variant="contained" onClick={() => {
-          alert('clicked');
-        }}>View Financials</Button>
       </div>
 
     )
@@ -205,7 +199,7 @@ async function getData(path) {
 async function getShareInfo(ticker) {
   // Call an external API endpoint to get posts.
   // You can use any data fetching library
-  return await getData(`/ratios/${ticker}`)
+  return await getData(`/ratios-ttm/${ticker}`)
 }
 
 
