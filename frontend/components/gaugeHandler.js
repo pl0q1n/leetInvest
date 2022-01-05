@@ -6,7 +6,7 @@ const GaugeHandler = ({ value, min, max }) => {
             {
                 type: "indicator",
                 value: value,
-                number: { prefix: "$", font: { color: 'white' } },
+                number: {  font: { color: 'white' } },
                 delta: {
                     reference: 30,
                     increasing: {
