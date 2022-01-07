@@ -41,7 +41,7 @@ export default function StockScreener() {
   const [profile, setProfile] = useState()
   const [query, setQuery] = useState()
   const [sectorsPE, setSectorsPE] = useState()
-
+  const [estimates, setEstimates] = useState()
   const tvRef = useRef(null)
 
   useEffect(async () => {
@@ -54,6 +54,9 @@ export default function StockScreener() {
     setDcf({"dcf": outlook.profile.dcf, "Stock Price": outlook.profile.price})
     setIncome(outlook.financialsAnnual.income)
     setProfile(outlook.profile)
+
+    const estimates = await getEstimates(query)
+    setEstimates(estimates)
 
     const sectorsPE = await getSectorsPE()
     const sectorsToPE = Object.fromEntries(sectorsPE.map((it) => {
@@ -106,13 +109,16 @@ export default function StockScreener() {
   ]
 
   // TODO: request data concurrently
-  if (ratios && DCF && income && profile && sectorsPE) {
+  if (ratios && DCF && income && profile && sectorsPE && estimates) {
     const gauge = <GaugeComponent value={ratios.priceEarningsRatioTTM} min={0} max={50} sector={Number(sectorsPE[profile.sector])}/>;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
     const entries = Object.entries(ratios).filter(([name, value]) => typeof value == 'number' && wantedMetrics.includes(name))
     entries.push(['eps', income[0]['eps']])
     entries.push(['beta', profile['beta']])
+    entries.push(['forward p/e', profile.price/estimates[1].estimatedEpsAvg])
+
+    entries.sort().reverse()
     const [ratioColumns, ratioRows] = GetColsNRows(entries, (val) => { return val.toFixed(3) })
 
     return (
@@ -196,12 +202,6 @@ async function getData(path) {
   return data
 }
 
-async function getShareInfo(ticker) {
-  // Call an external API endpoint to get posts.
-  // You can use any data fetching library
-  return await getData(`/v3/ratios-ttm/${ticker}`)
-}
-
 async function getSectorsPE() {
   var today = new Date();
   var date = today.toISOString().split('T')[0];
@@ -211,4 +211,8 @@ async function getSectorsPE() {
 
 async function getCompanyOutlook(ticker) {
   return await getData(`/v4/company-outlook?symbol=${ticker}`)
+}
+
+async function getEstimates(ticker) {
+  return await getData(`/v3/analyst-estimates/${ticker}?limit=2`)
 }
