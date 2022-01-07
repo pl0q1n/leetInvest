@@ -36,11 +36,12 @@ export default function StockScreener() {
   if (typeof window === 'undefined') {
     return null
   }
-  const [data, setData] = useState()
+  const [ratios, setData] = useState()
   const [DCF, setDcf] = useState()
   const [income, setIncome] = useState()
   const [profile, setProfile] = useState()
   const [query, setQuery] = useState()
+  const [sectorsPE, setSectorsPE] = useState()
 
   const tvRef = useRef(null)
 
@@ -60,6 +61,14 @@ export default function StockScreener() {
 
     const profile = await getProfile(query)
     setProfile(profile[0])
+
+    const sectorsPE = await getSectorsPE()
+    console.log("SECTORPE: ", sectorsPE)
+    const sectorsToPE = Object.fromEntries(sectorsPE.map((it) => {
+      return [it.sector, it.pe]
+    }))
+    console.log("ASDSFDSFGd: ", sectorsToPE)
+    setSectorsPE(sectorsToPE)
 
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/tv.js'
@@ -106,11 +115,11 @@ export default function StockScreener() {
   ]
 
   // TODO: request data concurrently
-  if (data && DCF && income && profile) {
-    const gauge = <GaugeComponent value={data.priceEarningsRatioTTM} min={0} max={50} />;
+  if (ratios && DCF && income && profile && sectorsPE) {
+    const gauge = <GaugeComponent value={ratios.priceEarningsRatioTTM} min={0} max={50} sector={Number(sectorsPE[profile.sector])}/>;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
-    const entries = Object.entries(data).filter(([name, value]) => typeof value == 'number' && wantedMetrics.includes(name))
+    const entries = Object.entries(ratios).filter(([name, value]) => typeof value == 'number' && wantedMetrics.includes(name))
     entries.push(['eps', income[0]['eps']])
     entries.push(['beta', profile['beta']])
     const [ratioColumns, ratioRows] = GetColsNRows(entries, (val) => { return val.toFixed(3) })
@@ -176,13 +185,13 @@ export default function StockScreener() {
 }
 
 function getAPIUrl(path) {
-  const useLocalAPI = true
+  const useLocalAPI = false
   if (useLocalAPI) {
-    return `http://localhost:80/finapi/v3${path}`
+    return `http://localhost:80/finapi${path}`
   }
 
-  const accessToken = '1bcc9d43e5eceb671cfaefb7a49ef506'
-  const url = `https://financialmodelingprep.com/api/v3${path}`
+  const accessToken = 'cbe49ef446ce33c830f942c0e63049c8'
+  const url = `https://financialmodelingprep.com/api${path}`
   if (path.indexOf('?') != -1) {
     return `${url}&apikey=${accessToken}`
   } else {
@@ -199,18 +208,25 @@ async function getData(path) {
 async function getShareInfo(ticker) {
   // Call an external API endpoint to get posts.
   // You can use any data fetching library
-  return await getData(`/ratios-ttm/${ticker}`)
+  return await getData(`/v3/ratios-ttm/${ticker}`)
 }
 
+async function getSectorsPE() {
+  var today = new Date();
+  var date = today.toISOString().split('T')[0];
+  // TODO GIVE IT A PROPER EXCHANGE
+  return await getData(`/v4/sector_price_earning_ratio?date=${date}&exchange=NASDAQ`)
+}
 
 async function getDCF(ticker) {
-  return await getData(`/discounted-cash-flow/${ticker}`)
+  return await getData(`/v3/discounted-cash-flow/${ticker}`)
 }
 
 async function getIncome(ticker) {
-  return await getData(`/income-statement/${ticker}`)
+  return await getData(`/v3/income-statement/${ticker}`)
 }
 
 async function getProfile(ticker) {
-  return await getData(`/profile/${ticker}`)
+  return await getData(`/v3/profile/${ticker}`)
 }
+
