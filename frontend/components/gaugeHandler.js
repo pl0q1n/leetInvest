@@ -1,7 +1,6 @@
 import Plot from "react-plotly.js"
 
 const GaugeHandler = ({ value, min, max, sector }) => {
-    console.log("SECTOR: ", sector)
     return (
         <Plot data={[
             {

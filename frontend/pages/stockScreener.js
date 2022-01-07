@@ -9,7 +9,6 @@ import GetColsNRows from '../components/DataGripHelper'
 import Search from '../components/SearchView'
 import CompanyOverview from '../components/CompanyOverview'
 import FlexyIncomeView from '../components/FlexyIncomeView'
-import { integerPropType } from '@mui/utils'
 
 const GaugeComponent = dynamic(
   () => import('../components/gaugeHandler'),
@@ -36,7 +35,7 @@ export default function StockScreener() {
   if (typeof window === 'undefined') {
     return null
   }
-  const [ratios, setData] = useState()
+  const [ratios, setRatios] = useState()
   const [DCF, setDcf] = useState()
   const [income, setIncome] = useState()
   const [profile, setProfile] = useState()
@@ -50,24 +49,16 @@ export default function StockScreener() {
       return
     }
 
-    const response = await getShareInfo(query)
-    setData(response[0])
-
-    const dcf = await getDCF(query)
-    setDcf(dcf[0])
-
-    const income = await getIncome(query)
-    setIncome(income)
-
-    const profile = await getProfile(query)
-    setProfile(profile[0])
+    const outlook = await getCompanyOutlook(query)
+    setRatios(outlook.ratios[0])
+    setDcf({"dcf": outlook.profile.dcf, "Stock Price": outlook.profile.price})
+    setIncome(outlook.financialsAnnual.income)
+    setProfile(outlook.profile)
 
     const sectorsPE = await getSectorsPE()
-    console.log("SECTORPE: ", sectorsPE)
     const sectorsToPE = Object.fromEntries(sectorsPE.map((it) => {
       return [it.sector, it.pe]
     }))
-    console.log("ASDSFDSFGd: ", sectorsToPE)
     setSectorsPE(sectorsToPE)
 
     const script = document.createElement('script');
@@ -218,15 +209,6 @@ async function getSectorsPE() {
   return await getData(`/v4/sector_price_earning_ratio?date=${date}&exchange=NASDAQ`)
 }
 
-async function getDCF(ticker) {
-  return await getData(`/v3/discounted-cash-flow/${ticker}`)
+async function getCompanyOutlook(ticker) {
+  return await getData(`/v4/company-outlook?symbol=${ticker}`)
 }
-
-async function getIncome(ticker) {
-  return await getData(`/v3/income-statement/${ticker}`)
-}
-
-async function getProfile(ticker) {
-  return await getData(`/v3/profile/${ticker}`)
-}
-
