@@ -138,7 +138,7 @@ export default function StockScreener() {
           Income Statement
         </Typography>
         <div style={{ width: '100%' }}>
-          <IncomePlotComponent income={income} />
+          <IncomePlotComponent income={income} estimates={estimates}/>
           <FlexyIncomeView incomes={income} />
         </div>
         <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
