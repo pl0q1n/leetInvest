@@ -5,7 +5,7 @@ export default function IncomePlotView({ income, estimates }) {
     const histYears = income.slice(0, len).map((inc) => inc.date.substring(0, 4))
     const estimatesCutoff = histYears[0]
 
-    const estimatesYears = estimates.map((e) => e.date.substring(0, 4)).reverse()
+    const estimatesYears = [estimatesCutoff].concat(estimates.map((e) => e.date.substring(0, 4)).reverse())
 
     const revenue = income.slice(0, len).map((inc) => inc.revenue)
     const earnings = income.slice(0, len).map((inc) => inc.netIncome)
@@ -18,11 +18,11 @@ export default function IncomePlotView({ income, estimates }) {
         estimates.map((e) => e.estimatedNetIncomeAvg).reverse()
     )
 
-    const estimatedMaxRevenue = estimates.map((e) => e.estimatedRevenueHigh).reverse()
-    const estimatedMinRevenue = estimates.map((e) => e.estimatedRevenueLow).reverse()
+    const estimatedMaxRevenue = [revenue[0]].concat(estimates.map((e) => e.estimatedRevenueHigh).reverse())
+    const estimatedMinRevenue = [revenue[0]].concat(estimates.map((e) => e.estimatedRevenueLow).reverse())
 
-    const estimatedMaxEarnings = estimates.map((e) => e.estimatedNetIncomeHigh).reverse()
-    const estimatedMinEarnings = estimates.map((e) => e.estimatedNetIncomeLow).reverse()
+    const estimatedMaxEarnings = [earnings[0]].concat(estimates.map((e) => e.estimatedNetIncomeHigh).reverse())
+    const estimatedMinEarnings = [earnings[0]].concat(estimates.map((e) => e.estimatedNetIncomeLow).reverse())
 
     const revenueData = {
         line: {
@@ -76,7 +76,7 @@ export default function IncomePlotView({ income, estimates }) {
             width: 5,
         },
         name: 'estimated revenue',
-        x: [estimatesCutoff].concat(estimatesYears),
+        x: estimatesYears,
         y: estimatedAvgRevenue,
         mode: 'lines'
     }
@@ -87,7 +87,7 @@ export default function IncomePlotView({ income, estimates }) {
             width: 5,
         },
         name: 'estimated earnings',
-        x: [estimatesCutoff].concat(estimatesYears),
+        x: estimatesYears,
         y: estimatedAvgEarnings,
         mode: 'lines'
     }
