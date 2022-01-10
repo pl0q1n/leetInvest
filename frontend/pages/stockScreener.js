@@ -25,8 +25,13 @@ const WaterfallComponent = dynamic(
   { ssr: false }
 )
 
-const IncomePlotComponent = dynamic (
+const IncomePlotComponent = dynamic(
   () => import('../components/IncomePlotView'),
+  { ssr: false }
+)
+
+const InsiderTransactionsComponent = dynamic(
+  () => import('../components/InsiderTransactionsView'),
   { ssr: false }
 )
 
@@ -42,6 +47,8 @@ export default function StockScreener() {
   const [query, setQuery] = useState()
   const [sectorsPE, setSectorsPE] = useState()
   const [estimates, setEstimates] = useState()
+  const [insiderTransactions, setInsiderTransactions] = useState()
+
   const tvRef = useRef(null)
 
   useEffect(async () => {
@@ -51,12 +58,15 @@ export default function StockScreener() {
 
     const outlook = await getCompanyOutlook(query)
     setRatios(outlook.ratios[0])
-    setDcf({"dcf": outlook.profile.dcf, "Stock Price": outlook.profile.price})
+    setDcf({ "dcf": outlook.profile.dcf, "Stock Price": outlook.profile.price })
     setIncome(outlook.financialsAnnual.income)
     setProfile(outlook.profile)
 
     const estimates = await getEstimates(query)
     setEstimates(estimates)
+
+    const insider = await getInsiderTransactions(query)
+    setInsiderTransactions(insider)
 
     const sectorsPE = await getSectorsPE()
     const sectorsToPE = Object.fromEntries(sectorsPE.map((it) => {
@@ -109,14 +119,14 @@ export default function StockScreener() {
   ]
 
   // TODO: request data concurrently
-  if (ratios && DCF && income && profile && sectorsPE && estimates) {
-    const gauge = <GaugeComponent value={ratios.priceEarningsRatioTTM} min={0} max={50} sector={Number(sectorsPE[profile.sector])}/>;
+  if (ratios && DCF && income && profile && sectorsPE && estimates && insiderTransactions) {
+    const gauge = <GaugeComponent value={ratios.priceEarningsRatioTTM} min={0} max={50} sector={Number(sectorsPE[profile.sector])} />;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
     const entries = Object.entries(ratios).filter(([name, value]) => typeof value == 'number' && wantedMetrics.includes(name))
     entries.push(['eps', income[0]['eps']])
     entries.push(['beta', profile['beta']])
-    entries.push(['forward p/e', profile.price/estimates[1].estimatedEpsAvg])
+    entries.push(['forward p/e', profile.price / estimates[1].estimatedEpsAvg])
 
     entries.sort().reverse()
     const [ratioColumns, ratioRows] = GetColsNRows(entries, (val) => { return val.toFixed(3) })
@@ -132,23 +142,23 @@ export default function StockScreener() {
           Company Overview
         </Typography>
         <CompanyOverview data={profile} />
-        <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
+        <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
 
         <Typography variant="h2" align="left" component="div" gutterBottom>
           Income Statement
         </Typography>
         <div style={{ width: '100%' }}>
-          <IncomePlotComponent income={income} estimates={estimates}/>
+          <IncomePlotComponent income={income} estimates={estimates} />
           <FlexyIncomeView incomes={income} />
         </div>
-        <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
+        <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
         <Typography variant="h2" align="left" component="div" gutterBottom>
           Ratios
         </Typography>
         <div style={{ width: '100%' }}>
           <DataGrid rows={ratioRows} columns={ratioColumns} autoHeight density='compact' />
         </div>
-        <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
+        <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
         <Typography variant="h2" align="left" component="div" gutterBottom>
           Some Plotly
         </Typography>
@@ -156,13 +166,18 @@ export default function StockScreener() {
           {gauge}
           {bullet}
         </div>
-        <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
+        <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
         <div>
           <WaterfallComponent
             income={income}
           />
         </div>
-        <Divider sx={{mt:7, mb: 5}} variant='fullWidth' />
+        <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
+        <Typography variant="h2" align="left" component="div" gutterBottom>
+          Insider Transactions
+        </Typography>
+          <InsiderTransactionsComponent transactions={insiderTransactions}/>
+        <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
         <Typography variant="h2" align="left" component="div" gutterBottom>
           Trading View
         </Typography>
@@ -211,6 +226,10 @@ async function getSectorsPE() {
 
 async function getCompanyOutlook(ticker) {
   return await getData(`/v4/company-outlook?symbol=${ticker}`)
+}
+
+async function getInsiderTransactions(ticker) {
+  return await getData(`/v4/insider-trading?symbol=${ticker}&page=0`)
 }
 
 async function getEstimates(ticker) {
