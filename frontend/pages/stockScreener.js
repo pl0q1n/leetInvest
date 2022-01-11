@@ -43,6 +43,7 @@ export default function StockScreener() {
   const [ratios, setRatios] = useState()
   const [DCF, setDcf] = useState()
   const [income, setIncome] = useState()
+  const [incomeQuarter, setIncomeQuarter] = useState()
   const [profile, setProfile] = useState()
   const [query, setQuery] = useState()
   const [sectorsPE, setSectorsPE] = useState()
@@ -60,6 +61,7 @@ export default function StockScreener() {
     setRatios(outlook.ratios[0])
     setDcf({ "dcf": outlook.profile.dcf, "Stock Price": outlook.profile.price })
     setIncome(outlook.financialsAnnual.income)
+    setIncomeQuarter(outlook.financialsQuarter.income)
     setProfile(outlook.profile)
 
     const estimates = await getEstimates(query)
@@ -119,7 +121,7 @@ export default function StockScreener() {
   ]
 
   // TODO: request data concurrently
-  if (ratios && DCF && income && profile && sectorsPE && estimates && insiderTransactions) {
+  if (ratios && DCF && income && incomeQuarter && profile && estimates && insiderTransactions && sectorsPE) {
     const gauge = <GaugeComponent value={ratios.priceEarningsRatioTTM} min={0} max={50} sector={Number(sectorsPE[profile.sector])} />;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
@@ -149,7 +151,7 @@ export default function StockScreener() {
         </Typography>
         <div style={{ width: '100%' }}>
           <IncomePlotComponent income={income} estimates={estimates} />
-          <FlexyIncomeView incomes={income} />
+          <FlexyIncomeView incomeAnnual={income} incomeQuarter={incomeQuarter}/>
         </div>
         <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
         <Typography variant="h2" align="left" component="div" gutterBottom>
