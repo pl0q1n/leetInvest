@@ -10,12 +10,18 @@ export default function Search({ changeQuery }) {
                 e.preventDefault()
                 changeQuery(query)
             }}>
-                <TextField id="outlined-search"
+                <TextField
+                    id="outlined-search"
                     label="Ticker Search"
                     type="search"
+                    size="medium"
                     onChange={handleChange} />
                 <Button variant="outlined"
-                    size="large"
+                    // size="large"
+                    style={{
+                        minHeight: '56px',
+                        maxHeight: '56px',
+                    }}
                     onClick={() => {
                         changeQuery(query);
                     }}

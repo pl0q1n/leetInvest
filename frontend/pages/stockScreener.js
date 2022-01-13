@@ -40,6 +40,7 @@ export default function StockScreener() {
   if (typeof window === 'undefined') {
     return null
   }
+
   const [ratios, setRatios] = useState()
   const [DCF, setDcf] = useState()
   const [income, setIncome] = useState()
@@ -49,15 +50,20 @@ export default function StockScreener() {
   const [sectorsPE, setSectorsPE] = useState()
   const [estimates, setEstimates] = useState()
   const [insiderTransactions, setInsiderTransactions] = useState()
+  const [haveAllData, setHaveAllData] = useState(false)
 
   const tvRef = useRef(null)
 
+  console.log('render()')
   useEffect(async () => {
     if (!query) {
       return
     }
 
+    setHaveAllData(false)
+
     const outlook = await getCompanyOutlook(query)
+    console.log('got compnay outlook')
     setRatios(outlook.ratios[0])
     setDcf({ "dcf": outlook.profile.dcf, "Stock Price": outlook.profile.price })
     setIncome(outlook.financialsAnnual.income)
@@ -66,6 +72,8 @@ export default function StockScreener() {
 
     const estimates = await getEstimates(query)
     setEstimates(estimates)
+    console.log('got estimates')
+
 
     const insider = await getInsiderTransactions(query)
     setInsiderTransactions(insider)
@@ -75,6 +83,8 @@ export default function StockScreener() {
       return [it.sector, it.pe]
     }))
     setSectorsPE(sectorsToPE)
+
+    setHaveAllData(true)
 
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/tv.js'
@@ -98,7 +108,6 @@ export default function StockScreener() {
     tvRef.current.appendChild(script)
   }, [query])
 
-
   const wantedMetrics = [
     "grossProfitMarginTTM",
     "operatingProfitMarginTTM",
@@ -121,7 +130,7 @@ export default function StockScreener() {
   ]
 
   // TODO: request data concurrently
-  if (ratios && DCF && income && incomeQuarter && profile && estimates && insiderTransactions && sectorsPE) {
+  if (haveAllData) {
     const gauge = <GaugeComponent value={ratios.priceEarningsRatioTTM} min={0} max={50} sector={Number(sectorsPE[profile.sector])} />;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
@@ -135,11 +144,8 @@ export default function StockScreener() {
 
     return (
       <div className={styles.Portfolio}>
-        <Typography variant="h2" align="center" component="div" gutterBottom>
-          {query}
-        </Typography>
+        <br/>
         <Search changeQuery={setQuery} />
-
         <Typography variant="h2" align="left" component="div" gutterBottom>
           Company Overview
         </Typography>
@@ -192,6 +198,7 @@ export default function StockScreener() {
   } else {
     return (
       <div className={styles.Portfolio}>
+        <br/>
         <Search changeQuery={setQuery} />
       </div>
     )
