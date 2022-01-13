@@ -21,7 +21,13 @@ export default function DiffTable({rows, columns}) {
                 return diff
             }
 
-            const color = diff > 0 ? "green" : "red"
+            let color = "grey"
+            if (diff > 0) {
+                color = "green"
+            }
+            else if (diff < 0) {
+                color = "red"
+            }
             return <font color={color}>{diff.toFixed(2)+"%"}</font>
         }
 

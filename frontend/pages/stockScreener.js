@@ -37,23 +37,15 @@ export default function StockScreener() {
   if (typeof window === 'undefined') {
     return null
   }
-
-  const [ratios, setRatios] = useState()
-  const [DCF, setDcf] = useState()
-  const [income, setIncome] = useState()
-  const [incomeQuarter, setIncomeQuarter] = useState()
-  const [balanceAnnual, setBalanceAnnual] = useState()
-  const [balanceQuarter, setBalanceQuarter] = useState()
-  const [profile, setProfile] = useState()
   const [query, setQuery] = useState()
+
+  const [outlook, setOutlook] = useState()
   const [sectorsPE, setSectorsPE] = useState()
   const [estimates, setEstimates] = useState()
   const [insiderTransactions, setInsiderTransactions] = useState()
   const [haveAllData, setHaveAllData] = useState(false)
 
   const tvRef = useRef(null)
-
-  console.log('render()')
   useEffect(async () => {
     if (!query) {
       return
@@ -62,16 +54,7 @@ export default function StockScreener() {
     setHaveAllData(false)
 
     const outlook = await getCompanyOutlook(query)
-    setRatios(outlook.ratios[0])
-    setDcf({ "dcf": outlook.profile.dcf, "Stock Price": outlook.profile.price })
-
-    setIncome(outlook.financialsAnnual.income)
-    setIncomeQuarter(outlook.financialsQuarter.income)
-
-    setBalanceAnnual(outlook.financialsAnnual.balance)
-    setBalanceQuarter(outlook.financialsQuarter.balance)
-
-    setProfile(outlook.profile)
+    setOutlook(outlook)
 
     const estimates = await getEstimates(query)
     setEstimates(estimates)
@@ -132,11 +115,22 @@ export default function StockScreener() {
 
   // TODO: request data concurrently
   if (haveAllData) {
+    const incomeAnnual = outlook.financialsAnnual.income
+    const incomeQuarter = outlook.financialsQuarter.income
+    const balanceAnnual = outlook.financialsAnnual.balance
+    const balanceQuarter = outlook.financialsQuarter.balance
+    const ratios = outlook.ratios[0]
+    const profile = outlook.profile
+    const DCF = {
+      dcf: profile.dcf,
+      'Stock Price': profile.price,
+    }
+
     const gauge = <GaugeComponent value={ratios.priceEarningsRatioTTM} min={0} max={50} sector={Number(sectorsPE[profile.sector])} />;
     const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
 
     const entries = Object.entries(ratios).filter(([name, value]) => typeof value == 'number' && wantedMetrics.includes(name))
-    entries.push(['eps', income[0]['eps']])
+    entries.push(['eps', incomeAnnual[0]['eps']])
     entries.push(['beta', profile['beta']])
     entries.push(['forward p/e', profile.price / estimates[1].estimatedEpsAvg])
 
@@ -157,9 +151,9 @@ export default function StockScreener() {
            Company financials
         </Typography>
         <div style={{ width: '100%' }}>
-          <IncomePlotComponent income={income} estimates={estimates} />
+          <IncomePlotComponent income={incomeAnnual} estimates={estimates} />
           <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
-          <FlexyIncomeView incomeAnnual={income} incomeQuarter={incomeQuarter}/>
+          <FlexyIncomeView incomeAnnual={incomeAnnual} incomeQuarter={incomeQuarter}/>
           <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
           <BalanceSheetView balanceAnnual={balanceAnnual} balanceQuarter={balanceQuarter}/>
         </div>
@@ -181,7 +175,7 @@ export default function StockScreener() {
         <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
         <div>
           <WaterfallComponent
-            income={income}
+            income={incomeAnnual}
           />
         </div>
         <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
