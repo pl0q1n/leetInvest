@@ -1,6 +1,4 @@
-import { Typography } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid'
-
+import DiffTable from './DiffTableView';
 
 const wantedMetrics =
     [
@@ -22,13 +20,6 @@ const wantedMetrics =
     ]
 
 export default function FlexyIncomeView({incomeAnnual, incomeQuarter}) {
-    const formatter = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: "compact",
-        compactDisplay: "short"
-    })
-
     let columns = [
         {
             field: 'Metric',
@@ -37,29 +28,10 @@ export default function FlexyIncomeView({incomeAnnual, incomeQuarter}) {
     ]
 
     const len = incomeAnnual.length > 7 ? 7 : incomeAnnual.length
-
     for (let i = len - 1; i > -1; i--) {
         columns.push(
             {
                 field: incomeAnnual[i].calendarYear,
-                renderCell: (params) => {
-                    const diff = params.value.prev == "" ? "" : (params.value.curr / params.value.prev * 100) - 100
-                    const diff_comp = (() => {
-                        if (diff == "") {
-                            return diff
-                        }
-
-                        const color = diff > 0 ? "green" : "red"
-                        return <font color={color}>{diff.toFixed(2)+"%"}</font>
-                    })()
-                    return (
-                        <Typography>
-                            {formatter.format(params.value.curr)}
-                            <br></br>
-                            {diff_comp}
-                        </Typography>
-                    )
-                },
                 width: 150,
             }
         )
@@ -69,24 +41,6 @@ export default function FlexyIncomeView({incomeAnnual, incomeQuarter}) {
     columns.push(
         {
             field: "TTM",
-            renderCell: (params) => {
-                const diff = params.value.prev == "" ? "" : (params.value.curr / params.value.prev * 100) - 100
-                const diff_comp = (() => {
-                    if (diff == "") {
-                        return diff
-                    }
-
-                    const color = diff > 0 ? "green" : "red"
-                    return <font color={color}>{diff.toFixed(2)+"%"}</font>
-                })()
-                return (
-                    <Typography>
-                        {formatter.format(params.value.curr)}
-                        <br></br>
-                        {diff_comp}
-                    </Typography>
-                )
-            },
             width: 150,
         }
     )
@@ -100,8 +54,7 @@ export default function FlexyIncomeView({incomeAnnual, incomeQuarter}) {
 
     let rows = []
     for (let i = 0; i < wantedMetrics.length; i++) {
-        let newRow =
-        {
+        let newRow = {
             id: i,
             Metric: wantedMetrics[i]
         }
@@ -118,5 +71,5 @@ export default function FlexyIncomeView({incomeAnnual, incomeQuarter}) {
         rows.push(newRow)
     }
 
-    return <DataGrid rows={rows} columns={columns} autoHeight density='compact' rowHeight={100} />
+    return <DiffTable rows={rows} columns={columns}/>
 }

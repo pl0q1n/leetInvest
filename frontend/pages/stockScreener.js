@@ -199,7 +199,7 @@ export default function StockScreener() {
 }
 
 function getAPIUrl(path) {
-  const useLocalAPI = false
+  const useLocalAPI = true
   if (useLocalAPI) {
     return `http://localhost:80/finapi${path}`
   }
