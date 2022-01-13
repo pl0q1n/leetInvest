@@ -9,6 +9,8 @@ import GetColsNRows from '../components/DataGripHelper'
 import Search from '../components/SearchView'
 import CompanyOverview from '../components/CompanyOverview'
 import FlexyIncomeView from '../components/FlexyIncomeView'
+import BalanceSheetView from '../components/BalanceSheetView'
+import InsiderTransactions from '../components/InsiderTransactionsView'
 
 const GaugeComponent = dynamic(
   () => import('../components/gaugeHandler'),
@@ -30,11 +32,6 @@ const IncomePlotComponent = dynamic(
   { ssr: false }
 )
 
-const InsiderTransactionsComponent = dynamic(
-  () => import('../components/InsiderTransactionsView'),
-  { ssr: false }
-)
-
 export default function StockScreener() {
   // disable server side rendering?
   if (typeof window === 'undefined') {
@@ -45,6 +42,8 @@ export default function StockScreener() {
   const [DCF, setDcf] = useState()
   const [income, setIncome] = useState()
   const [incomeQuarter, setIncomeQuarter] = useState()
+  const [balanceAnnual, setBalanceAnnual] = useState()
+  const [balanceQuarter, setBalanceQuarter] = useState()
   const [profile, setProfile] = useState()
   const [query, setQuery] = useState()
   const [sectorsPE, setSectorsPE] = useState()
@@ -63,17 +62,19 @@ export default function StockScreener() {
     setHaveAllData(false)
 
     const outlook = await getCompanyOutlook(query)
-    console.log('got compnay outlook')
     setRatios(outlook.ratios[0])
     setDcf({ "dcf": outlook.profile.dcf, "Stock Price": outlook.profile.price })
+
     setIncome(outlook.financialsAnnual.income)
     setIncomeQuarter(outlook.financialsQuarter.income)
+
+    setBalanceAnnual(outlook.financialsAnnual.balance)
+    setBalanceQuarter(outlook.financialsQuarter.balance)
+
     setProfile(outlook.profile)
 
     const estimates = await getEstimates(query)
     setEstimates(estimates)
-    console.log('got estimates')
-
 
     const insider = await getInsiderTransactions(query)
     setInsiderTransactions(insider)
@@ -153,11 +154,14 @@ export default function StockScreener() {
         <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
 
         <Typography variant="h2" align="left" component="div" gutterBottom>
-          Income Statement
+           Company financials
         </Typography>
         <div style={{ width: '100%' }}>
           <IncomePlotComponent income={income} estimates={estimates} />
+          <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
           <FlexyIncomeView incomeAnnual={income} incomeQuarter={incomeQuarter}/>
+          <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
+          <BalanceSheetView balanceAnnual={balanceAnnual} balanceQuarter={balanceQuarter}/>
         </div>
         <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
         <Typography variant="h2" align="left" component="div" gutterBottom>
@@ -184,7 +188,7 @@ export default function StockScreener() {
         <Typography variant="h2" align="left" component="div" gutterBottom>
           Insider Transactions
         </Typography>
-          <InsiderTransactionsComponent transactions={insiderTransactions}/>
+          <InsiderTransactions transactions={insiderTransactions}/>
         <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
         <Typography variant="h2" align="left" component="div" gutterBottom>
           Trading View
