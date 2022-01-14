@@ -15,18 +15,19 @@ export default function DiffTable({rows, columns}) {
         }
 
         const {curr, prev} = params.value
-        const diff = prev == "" ? "-" : (curr / prev * 100) - 100
+        const diff = prev == "" ? "-" : Math.abs((curr / prev) * 100 - 100)
+
         const displayDiff = (diff) => {
             if (typeof(diff) == "string") {
                 return diff
             }
-
             let color = "grey"
-            if (diff > 0) {
+            if (curr > prev) {
                 color = "green"
             }
-            else if (diff < 0) {
+            else if (curr < prev) {
                 color = "red"
+                diff = -diff
             }
             return <font color={color}>{diff.toFixed(2)+"%"}</font>
         }
