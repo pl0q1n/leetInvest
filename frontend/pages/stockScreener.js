@@ -11,6 +11,7 @@ import CompanyOverview from '../components/CompanyOverview'
 import FlexyIncomeView from '../components/FlexyIncomeView'
 import BalanceSheetView from '../components/BalanceSheetView'
 import InsiderTransactions from '../components/InsiderTransactionsView'
+import CashFlowView from '../components/CashFlowView'
 
 const GaugeComponent = dynamic(
   () => import('../components/gaugeHandler'),
@@ -117,17 +118,22 @@ export default function StockScreener() {
   if (haveAllData) {
     const incomeAnnual = outlook.financialsAnnual.income
     const incomeQuarter = outlook.financialsQuarter.income
+    
     const balanceAnnual = outlook.financialsAnnual.balance
     const balanceQuarter = outlook.financialsQuarter.balance
+    
+    const cashFlowAnnual = outlook.financialsAnnual.cash
+    const cashFlowQuarter = outlook.financialsQuarter.cash
+
     const ratios = outlook.ratios[0]
     const profile = outlook.profile
     const DCF = {
       dcf: profile.dcf,
-      'Stock Price': profile.price,
+      price: profile.price,
     }
 
     const gauge = <GaugeComponent value={ratios.priceEarningsRatioTTM} min={0} max={50} sector={Number(sectorsPE[profile.sector])} />;
-    const bullet = <PlotComponent dcf={DCF.dcf} price={DCF["Stock Price"]} />;
+    const bullet = <PlotComponent dcf={DCF.dcf} price={DCF.price} />;
 
     const entries = Object.entries(ratios).filter(([name, value]) => typeof value == 'number' && wantedMetrics.includes(name))
     entries.push(['eps', incomeAnnual[0]['eps']])
@@ -152,10 +158,18 @@ export default function StockScreener() {
         </Typography>
         <div style={{ width: '100%' }}>
           <IncomePlotComponent income={incomeAnnual} estimates={estimates} />
-          <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
+          <Typography variant="h4" mt={3} align="left" component="div" gutterBottom>
+            Income Statement
+          </Typography>
           <FlexyIncomeView incomeAnnual={incomeAnnual} incomeQuarter={incomeQuarter}/>
-          <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
+          <Typography variant="h4" mt={3} align="left" component="div" gutterBottom>
+            Balance Statement
+          </Typography>
           <BalanceSheetView balanceAnnual={balanceAnnual} balanceQuarter={balanceQuarter}/>
+          <Typography variant="h4" mt={3} align="left" component="div" gutterBottom>
+            CashFlow Statement
+          </Typography>
+          <CashFlowView cashFlowAnnual={cashFlowAnnual} cashFlowQuarter={cashFlowQuarter}/>
         </div>
         <Divider sx={{ mt: 7, mb: 5 }} variant='fullWidth' />
         <Typography variant="h2" align="left" component="div" gutterBottom>
